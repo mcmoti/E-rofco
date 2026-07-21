@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-ROFCO Compliance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 font-sans flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-gray-100">
+        <!-- Shield Icon for Compliance -->
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 text-blue-600 text-2xl shadow-inner mx-auto">
+            🛡️
+        </div>
+
+        <h1 class="text-xl font-bold text-gray-800 tracking-tight text-center mb-4">{{ texts['policy_title'] }}</h1>
+        
+        <!-- Compliance Policy Text Box -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 max-h-48 overflow-y-auto mb-6 leading-relaxed">
+            {{ texts['policy_text'] }}
+        </div>
+
+        <!-- Error Handling Notice if they don't check the box -->
+        {% if error %}
+        <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs font-medium rounded-xl text-center">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Compliance Checkbox Form -->
+        <form method="POST" class="space-y-6">
+            <label class="flex items-start space-x-3 cursor-pointer">
+                <input type="checkbox" name="accept_policy" class="mt-1 h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                <span class="text-xs text-gray-500 font-medium leading-tight">
+                    {{ texts['agree_check'] }}
+                </span>
+            </label>
+
+            <div class="space-y-3">
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-sm text-sm">
+                    {{ texts['continue_btn'] }}
+                </button>
+
+                <a href="{{ url_for('toggle_language') }}" class="block text-center w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-4 rounded-xl transition duration-200 text-xs">
+                    {{ texts['switch_btn'] }}
+                </a>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

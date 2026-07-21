@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ texts['shares_title'] }} - M-ROFCO</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        .form-card { background: white; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 100%; max-width: 520px; }
+        h2 { margin: 0 0 8px 0; color: #15803d; font-size: 22px; }
+        p.subtext { color: #64748b; font-size: 14px; margin: 0 0 20px 0; }
+        .search-box { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+        .search-box label { font-size: 13px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px; }
+        .register-new-btn { display: inline-block; margin-top: 10px; font-size: 13px; color: #15803d; text-decoration: none; font-weight: 600; }
+        .register-new-btn:hover { text-decoration: underline; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .btn-submit { width: 100%; background-color: #15803d; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 10px; }
+        .btn-submit:hover { background-color: #166534; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #15803d; text-decoration: none; font-size: 14px; font-weight: 500; }
+        .success-banner { background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
+        .info-note { font-size: 12px; color: #15803d; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h2>{{ texts['shares_title'] }}</h2>
+        <p class="subtext">{{ texts['shares_sub'] }}</p>
+
+        {% if success %}
+            <div class="success-banner">{{ texts['shares_success'] }}</div>
+        {% endif %}
+
+        <!-- Quick Farmer Search & Auto-Fill -->
+        <div class="search-box">
+            <label for="farmer_search">🔎 Search Registered Farmer (Auto-Fill)</label>
+            <input type="text" id="farmer_search" list="farmers_datalist" placeholder="Type farmer name..." oninput="autoFillFarmer(this.value)">
+            <datalist id="farmers_datalist">
+                {% for f in farmers %}
+                    <option value="{{ f.name }}">{{ f.phone }} - {{ f.location }}</option>
+                {% endfor %}
+            </datalist>
+            <a href="/register-farm" class="register-new-btn">➕ Farmer Not Registered Yet? Click Here to Register New Farmer</a>
+        </div>
+
+        <form method="POST" action="/shares-management">
+            <div class="form-group">
+                <label for="farmer_name">{{ texts['label_farmer_name'] }}</label>
+                <input type="text" id="farmer_name" name="farmer_name" placeholder="e.g., Gabriel Omondi" required>
+            </div>
+
+            <div class="form-group">
+                <label for="number_of_shares">{{ texts['label_num_shares'] }}</label>
+                <input type="number" id="number_of_shares" name="number_of_shares" min="1" placeholder="e.g., 5" required oninput="calculateShares()">
+                <div class="info-note">Rate: KES 10,000 per share</div>
+            </div>
+
+            <div class="form-group">
+                <label for="shares_value">{{ texts['label_share_val'] }}</label>
+                <input type="number" id="shares_value" name="shares_value" placeholder="Auto-calculated (KES)" required readonly style="background-color: #f8fafc;">
+            </div>
+
+            <div class="form-group">
+                <label for="annual_benefits">{{ texts['label_benefits'] }}</label>
+                <input type="number" id="annual_benefits" name="annual_benefits" placeholder="Auto-calculated (10% annual yield)" required readonly style="background-color: #f8fafc;">
+            </div>
+
+            <button type="submit" class="btn-submit">{{ texts['shares_btn'] }}</button>
+        </form>
+
+        <a href="/home" class="back-link">{{ texts['back_dash'] }}</a>
+    </div>
+
+    <script>
+        const registeredFarmers = {{ farmers | tojson }};
+
+        function autoFillFarmer(selectedName) {
+            const matched = registeredFarmers.find(f => f.name.toLowerCase() === selectedName.toLowerCase());
+            if (matched) {
+                document.getElementById('farmer_name').value = matched.name;
+            }
+        }
+
+        function calculateShares() {
+            const sharePrice = 10000;
+            const annualBenefitRate = 0.10;
+            const numShares = parseFloat(document.getElementById('number_of_shares').value);
+
+            if (!isNaN(numShares) && numShares > 0) {
+                const totalValue = numShares * sharePrice;
+                document.getElementById('shares_value').value = totalValue;
+                document.getElementById('annual_benefits').value = totalValue * annualBenefitRate;
+            } else {
+                document.getElementById('shares_value').value = '';
+                document.getElementById('annual_benefits').value = '';
+            }
+        }
+    </script>
+</body>
+</html>

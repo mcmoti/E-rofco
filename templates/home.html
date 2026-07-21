@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <title>M-ROFCO Hub</title>
+    <style>
+        :root {
+            --primary: #1e293b;         /* Dark Slate */
+            --primary-dark: #0f172a;    /* Black / Charcoal Accent */
+            --primary-light: #f8fafc;   /* Soft Light Gray */
+            --bg-page: #f1f5f9;         /* Neutral Gray Page BG */
+            --bg-container: #ffffff;    /* Clean White Container */
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --border-dark: #cbd5e1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-page);
+            margin: 0;
+            padding: 40px 20px 0 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .hub-container {
+            background: var(--bg-container);
+            padding: 36px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 1050px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 40px;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            padding: 20px 24px;
+            background: var(--primary-dark);
+            border-radius: 14px;
+            color: #ffffff;
+        }
+
+        .title-area h2 {
+            margin: 0 0 4px 0;
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .user-info {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .user-name {
+            color: #ffffff;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .logout-btn {
+            background-color: #ffffff;
+            color: #e11d48;
+            border: 1px solid #ffe4e6;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: #fff1f2;
+        }
+
+        /* --- MOTTO & VISION BAR --- */
+        .motto-vision-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .mv-card {
+            background: var(--primary-light);
+            color: var(--text-main);
+            padding: 18px 22px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--primary-dark);
+        }
+
+        .mv-card h4 {
+            margin: 0 0 6px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+        }
+
+        .mv-card p {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* --- DASHBOARD GRID --- */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary-dark);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+            border-color: var(--border-dark);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .icon-badge {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-light);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: var(--primary-dark);
+        }
+
+        .card h3 {
+            margin: 0 0 8px 0;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .card p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+
+        .highlight-num {
+            color: var(--primary-dark);
+            font-weight: 800;
+        }
+
+        /* --- ABOUT US INTEGRATED SECTION --- */
+        .about-section {
+            margin-top: 10px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .about-box {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+        }
+
+        .about-header-badge {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .about-box h2 {
+            margin: 0 0 12px 0;
+            font-size: 22px;
+            color: var(--text-main);
+        }
+
+        .about-desc {
+            color: var(--text-muted);
+            font-size: 14.5px;
+            line-height: 1.65;
+            margin-bottom: 24px;
+        }
+
+        .sub-heading {
+            margin: 24px 0 14px 0;
+            font-size: 17px;
+            color: var(--text-main);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+
+        /* --- EXECUTIVE LEADERSHIP GRID --- */
+        .leadership-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .leader-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .leader-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-dark);
+        }
+
+        .leader-img-placeholder {
+            width: 100%;
+            height: 140px;
+            background: var(--primary-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .leader-img-placeholder svg {
+            width: 48px;
+            height: 48px;
+        }
+
+        .leader-info {
+            padding: 12px 16px;
+        }
+
+        .leader-title {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .leader-role {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* --- KEY PARTNERS GRID --- */
+        .partners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .partner-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .partner-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-dark);
+        }
+
+        .partner-card a {
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .partner-card a:hover {
+            text-decoration: underline;
+        }
+
+        /* --- CONTACT SECTION --- */
+        .contact-box {
+            background: var(--primary-light);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+
+        .contact-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .contact-list li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-list a {
+            color: var(--text-main);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .contact-list a:hover {
+            text-decoration: underline;
+        }
+
+        /* --- FOOTER UTILITY BAR --- */
+        .site-footer {
+            width: 100%;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-container);
+            padding: 18px 0;
+            margin-top: auto;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+        }
+
+        .footer-content {
+            width: 100%;
+            max-width: 1050px;
+            padding: 0 36px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            box-sizing: border-box;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .region-select {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .region-select:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-main);
+            text-decoration: underline;
+        }
+
+        .footer-links span {
+            color: var(--border-dark);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hub-container">
+        <!-- Top Navigation Header -->
+        <div class="header-section">
+            <div class="title-area">
+                <h2>{{ texts['dash_title'] }}</h2>
+                <div class="user-info">
+                    {{ texts['dash_sub'] }}<span class="user-name">{{ name }}</span>
+                </div>
+            </div>
+            <a href="/logout" class="logout-btn">{{ texts['logout'] }}</a>
+        </div>
+
+        <!-- Motto & Vision Banner -->
+        <div class="motto-vision-bar">
+            <div class="mv-card">
+                <h4>🎯 Society Motto</h4>
+                <p>"Empowering Smallholders, Sustaining Agricultural Growth."</p>
+            </div>
+            <div class="mv-card">
+                <h4>👁️ Vision Statement</h4>
+                <p>"To build a modernized, digitally seamless cooperative ecosystem for local farming communities."</p>
+            </div>
+        </div>
+
+        <!-- Operations Modules Grid -->
+        <div class="card-grid">
+            <a href="/register-farm" class="card">
+                <div class="icon-badge">🏡</div>
+                <h3>{{ texts['m1'] }}</h3>
+                <p>{{ texts['m1_sub'] }}</p>
+            </a>
+
+            <a href="/transport-logistics" class="card">
+                <div class="icon-badge">🚜</div>
+                <h3>{{ texts['m2'] }}</h3>
+                <p>{{ texts['m2_sub'] }}</p>
+            </a>
+
+            <a href="/weighbridge-tickets" class="card">
+                <div class="icon-badge">📊</div>
+                <h3>{{ texts['m3'] }}</h3>
+                <p><span class="highlight-num">{{ metrics.yield_count }}</span> Yields • <span class="highlight-num">{{ metrics.shareholding_count }}</span> Shares • {{ texts['m3_sub'] }}</p>
+            </a>
+
+            <a href="/loan-services" class="card">
+                <div class="icon-badge">💳</div>
+                <h3>{{ texts['m5'] }}</h3>
+                <p><span class="highlight-num">{{ metrics.loan_count }}</span> Advances • <span class="highlight-num">{{ metrics.payment_count }}</span> Payments • {{ texts['m5_sub'] }}</p>
+            </a>
+
+            <a href="/shares-management" class="card">
+                <div class="icon-badge">📈</div>
+                <h3>{{ texts['m6'] }}</h3>
+                <p>{{ texts['m6_sub'] }}</p>
+            </a>
+        </div>
+
+        <!-- Integrated About Us Section -->
+        <div class="about-section">
+            <div class="about-box">
+                <span class="about-header-badge">About Society</span>
+                <h2>{{ texts['about_title'] }} — {{ texts['about_sub'] }}</h2>
+                <p class="about-desc">
+                    E-ROFCO is a cooperative society committed to transforming agricultural management for local smallholder farmers. 
+                    Our digital platform facilitates seamless farm profiling, live harvest weighbridge ledger tracking, tractor dispatch requests, 
+                    micro-credit loan advances, and transparent shareholding account management directly integrated with cloud registries.
+                </p>
+
+                <!-- Executive Leadership -->
+                <h3 class="sub-heading">👔 {{ texts['about_leadership'] }}</h3>
+                <div class="leadership-grid">
+                    <div class="leader-card">
+                        <div class="leader-img-placeholder">
+                            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="leader-info">
+                            <h4 class="leader-title">{{ texts['role_chairman'] }}</h4>
+                            <p class="leader-role">Executive Board Chair</p>
+                        </div>
+                    </div>
+
+                    <div class="leader-card">
+                        <div class="leader-img-placeholder">
+                            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="leader-info">
+                            <h4 class="leader-title">{{ texts['role_treasurer'] }}</h4>
+                            <p class="leader-role">Financial Officer</p>
+                        </div>
+                    </div>
+
+                    <div class="leader-card">
+                        <div class="leader-img-placeholder">
+                            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="leader-info">
+                            <h4 class="leader-title">{{ texts['role_secretary'] }}</h4>
+                            <p class="leader-role">Administrative Head</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Partners -->
+                <h3 class="sub-heading">🤝 {{ texts['about_partners'] }}</h3>
+                <div class="partners-grid">
+                    <div class="partner-card">
+                        <a href="https://www.kibossugar.co.ke/" target="_blank" rel="noopener noreferrer">Kibos Sugar</a>
+                    </div>
+                    <div class="partner-card">
+                        <a href="https://www.kisumu.go.ke/chemelil-sugar-factory-roars-back-to-life-after-major-revamp/" target="_blank" rel="noopener noreferrer">Chemilil Sugar Factory</a>
+                    </div>
+                    <div class="partner-card">
+                        <a href="#" onclick="return false;">West Valley Sugar Company</a>
+                    </div>
+                    <div class="partner-card">
+                        <a href="https://www.shofco.org/" target="_blank" rel="noopener noreferrer">SHOFCO</a>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <h3 class="sub-heading">📞 Get in Touch</h3>
+                <div class="contact-box">
+                    <ul class="contact-list">
+                        <li>
+                            <strong>Phone:</strong> +254 700 000000
+                        </li>
+                        <li>
+                            <strong>Email:</strong> <a href="mailto:info@e-rofco.co.ke">info@e-rofco.co.ke</a>
+                        </li>
+                        <li>
+                            <strong>Facebook:</strong> <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Follow M-ROFCO on Facebook</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SITE FOOTER BAR -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="/toggle-language" class="region-select">🌐 Kenya (Swahili / English)</a>
+                <span>|</span>
+                <div>Copyright © 2026 M-ROFCO Cooperative Society Ltd. All rights reserved.</div>
+            </div>
+            <div class="footer-links">
+                <a href="/privacy-policy">Privacy Policy</a>
+                <span>|</span>
+                <a href="/terms-of-use">Terms of Use</a>
+                <span>|</span>
+                <a href="/legal">Legal Notices</a>
+                <span>|</span>
+                <a href="/sitemap">Site Map</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ texts['m3'] }} - M-ROFCO</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Smooth blur transition framework for metric cards */
+        .metric-container:hover .metric-card:not(:hover) {
+            filter: blur(4px) grayscale(20%);
+            opacity: 0.4;
+        }
+        .metric-card {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+
+    <!-- Top Navigation Context Links -->
+    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
+            ← {{ texts['back_dash'] or 'Back to Dashboard' }}
+        </a>
+        <a href="/toggle-language" class="bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50">
+            {{ texts['switch_btn'] or 'Switch Language' }}
+        </a>
+    </div>
+
+    <!-- MAIN METRIC HOVER CARDS -->
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-4 mb-8 metric-container">
+        
+        <!-- MEMBERSHIP CARD -->
+        <div class="metric-card bg-white p-5 rounded-xl shadow-xs border-l-4 border-emerald-600 flex flex-col justify-between group">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ texts['membership_records'] or 'Membership Records' }}</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ membership_tickets|length if membership_tickets else (members|length if members else 0) }} {{ texts['active'] or 'Active' }}</p>
+            </div>
+            <button onclick="switchTab('membership')" class="mt-4 w-full bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer text-center">
+                {{ texts['view_membership'] or 'View Membership' }}
+            </button>
+        </div>
+
+        <!-- SHAREHOLDING CARD -->
+        <div class="metric-card bg-white p-5 rounded-xl shadow-xs border-l-4 border-teal-600 flex flex-col justify-between group">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ texts['shareholding_accounts'] or 'Shareholding Accounts' }}</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ shareholding_tickets|length if shareholding_tickets else 0 }} {{ texts['registered'] or 'Registered' }}</p>
+            </div>
+            <button onclick="switchTab('shareholding')" class="mt-4 w-full bg-teal-50 text-teal-700 group-hover:bg-teal-600 group-hover:text-white text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer text-center">
+                {{ texts['view_shareholding'] or 'View Shareholding' }}
+            </button>
+        </div>
+
+        <!-- SHORT-TERM CARD -->
+        <div class="metric-card bg-white p-5 rounded-xl shadow-xs border-l-4 border-amber-500 flex flex-col justify-between group">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ texts['short_term_advances'] or 'Short-Term Advances' }}</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ short_term_tickets|length if short_term_tickets else 0 }} {{ texts['entries'] or 'Entries' }}</p>
+            </div>
+            <button onclick="switchTab('short_term')" class="mt-4 w-full bg-amber-50 text-amber-700 group-hover:bg-amber-500 group-hover:text-white text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer text-center">
+                {{ texts['view_short_term'] or 'View Short-Term' }}
+            </button>
+        </div>
+
+        <!-- LONG-TERM CARD -->
+        <div class="metric-card bg-white p-5 rounded-xl shadow-xs border-l-4 border-orange-600 flex flex-col justify-between group">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ texts['long_term_loans'] or 'Long-Term Loans' }}</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ long_term_tickets|length if long_term_tickets else 0 }} {{ texts['entries'] or 'Entries' }}</p>
+            </div>
+            <button onclick="switchTab('long_term')" class="mt-4 w-full bg-orange-50 text-orange-700 group-hover:bg-orange-600 group-hover:text-white text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer text-center">
+                {{ texts['view_long_term'] or 'View Long-Term' }}
+            </button>
+        </div>
+
+        <!-- PROCESSED PAYMENTS CARD -->
+        <div class="metric-card bg-white p-5 rounded-xl shadow-xs border-l-4 border-sky-600 flex flex-col justify-between group">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ texts['processed_payments'] or 'Processed Payments' }}</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ payment_tickets|length if payment_tickets else 0 }} {{ texts['logs'] or 'Logs' }}</p>
+            </div>
+            <button onclick="switchTab('payment')" class="mt-4 w-full bg-sky-50 text-sky-700 group-hover:bg-sky-600 group-hover:text-white text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer text-center">
+                {{ texts['view_payments'] or 'View Payments' }}
+            </button>
+        </div>
+
+    </div>
+
+    <!-- DATASET SCOPE PANEL -->
+    <div id="dataset-panel" class="max-w-7xl mx-auto bg-white rounded-xl shadow-xs p-6 border border-gray-100 hidden relative">
+        
+        <!-- INSTANT ACTION BUTTONS GROUP -->
+        <div class="absolute top-4 right-4 flex items-center gap-2">
+            <a href="https://docs.google.com/spreadsheets/d/1EwSF4aOvOqMWK52u48mmgrDIENv1izIJ7EgZMBzf4sw/edit?gid=0#gid=0" 
+               target="_blank" 
+               class="bg-gray-100 hover:bg-emerald-50 text-gray-600 hover:text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors border border-gray-200 shadow-xs cursor-pointer"
+               title="{{ texts['edit_live_sheet_title'] or 'Open Full Google Sheet for Editing' }}">
+                ✏️ {{ texts['edit_live_sheet'] or 'Edit Live Sheet' }}
+            </a>
+
+            <button onclick="closePanel()" class="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 rounded-full h-8 w-8 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors" title="{{ texts['close_panel'] or 'Close Panel' }}">
+                ✕
+            </button>
+        </div>
+
+        <!-- Tab 1: Membership Dataset & Live Search -->
+        <div id="tab-membership" class="tab-content hidden pt-4">
+            <h2 class="text-xl font-bold text-emerald-800 mb-1">{{ texts['master_membership_dir'] or 'Master Membership Directory' }}</h2>
+            <p class="text-xs text-gray-500 mb-4">{{ texts['direct_live_sync'] or 'Direct Live Sheet Sync Data' }}</p>
+
+            <!-- Instant Search Bar -->
+            <div class="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <label for="farmer_search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">🔎 {{ texts['filter_membership_records'] or 'Filter Membership Records' }}</label>
+                <input type="text" id="farmer_search" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" placeholder="{{ texts['search_membership_ph'] or 'Type name, contact, ID, location, or member type...' }}" onkeyup="filterFarmers()">
+            </div>
+
+            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <table class="w-full text-left border-collapse" id="membership_table">
+                    <thead>
+                        <tr class="bg-emerald-700 text-white text-xs font-semibold uppercase">
+                            <th class="p-3">{{ texts['farmer_full_name'] or 'Farmer Full Name' }}</th>
+                            <th class="p-3">{{ texts['phone_contact'] or 'Phone Contact' }}</th>
+                            <th class="p-3">{{ texts['national_id'] or 'National ID' }}</th>
+                            <th class="p-3">{{ texts['location_region'] or 'Location / Region' }}</th>
+                            <th class="p-3">
+                                {{ texts['membership_type'] or 'Membership Type' }}
+                                <span class="block text-[10px] font-normal normal-case opacity-80">
+                                    (General Member vs. Share Holder)
+                                </span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100 text-gray-700">
+                        {% set active_members = membership_tickets if membership_tickets else members %}
+                        {% for row in active_members %}
+                        <tr class="farmer-row hover:bg-emerald-50/40">
+                            <td class="p-3 font-semibold text-gray-900">{{ row['NAME'] or row.get('Farmer Name') or 'N/A' }}</td>
+                            <td class="p-3">{{ row['PHONE CONTACT'] or row.get('Phone Number') or 'N/A' }}</td>
+                            <td class="p-3">{{ row['ID'] or row.get('National ID') or 'N/A' }}</td>
+                            <td class="p-3">{{ row['LOCATION'] or row.get('Location') or 'N/A' }}</td>
+                            <td class="p-3">{{ row['TYPE(GENERAL MEMBER & SHAREHOLDING MEMBER)'] or row.get('MEMBERSHIP TYPE') or row.get('Primary Target Crop') or 'General Member' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">{{ texts['no_membership_rows'] or 'No active membership rows found.' }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Shareholding Accounts -->
+        <div id="tab-shareholding" class="tab-content hidden pt-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 overflow-x-auto border border-gray-200 rounded-lg">
+                    <h2 class="text-lg font-bold text-teal-800 p-4 border-b border-gray-200">{{ texts['shareholding_registry'] or 'Shareholding Registry' }}</h2>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-teal-700 text-white text-xs font-semibold uppercase">
+                                <th class="p-3">{{ texts['name'] or 'Name' }}</th>
+                                <th class="p-3">{{ texts['shares_count'] or 'Shares Count' }}</th>
+                                <th class="p-3">{{ texts['value_kes'] or 'Value (KES)' }}</th>
+                                <th class="p-3">{{ texts['annual_benefits'] or 'Annual Benefits' }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-100 text-gray-700">
+                            {% for row in shareholding_tickets %}
+                            <tr class="hover:bg-teal-50/40">
+                                <td class="p-3 font-semibold text-gray-900">{{ row['NAME'] }}</td>
+                                <td class="p-3">{{ row['NUMBER OF SHARES'] }}</td>
+                                <td class="p-3">{{ row['SHARES VALUE'] }}</td>
+                                <td class="p-3">{{ row['ANNUAL BENEFITS'] }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="p-4 text-center text-gray-400 italic">{{ texts['no_shareholding_entries'] or 'No shareholding entries found.' }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SHARE POLICY & ENTRY FORM -->
+                <div class="bg-teal-50/50 p-5 rounded-xl border border-teal-100">
+                    <h3 class="text-sm font-bold text-teal-900 uppercase tracking-wide mb-2">{{ texts['share_acquisition_policy'] or 'Share Acquisition Policy' }}</h3>
+                    <p class="text-xs text-gray-600 mb-4 leading-relaxed">
+                        {{ texts['share_policy_desc'] or 'M-ROFCO shares are fixed at KES 10,000 per share. Fill out fields below to directly append records.' }}
+                    </p>
+                    <hr class="border-teal-100 mb-4">
+                    <h4 class="text-xs font-bold text-gray-700 uppercase mb-3">{{ texts['add_entry_to_sheet'] or 'Add Entry to Sheet' }}</h4>
+                    
+                    <form action="/add-record" method="POST" class="space-y-3">
+                        <input type="hidden" name="target_tab" value="Shareholding Accounts">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['farmer_full_name'] or 'Farmer Full Name' }}</label>
+                            <input type="text" name="farmer_name" required placeholder="{{ texts['ph_farmer_name'] or 'e.g. Gabriel Odongo' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['shares_count'] or 'Shares Count' }}</label>
+                            <input type="number" name="shares_count" id="calc-shares" oninput="calculateShares()" required placeholder="{{ texts['ph_shares_count'] or 'e.g. 5' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['total_calculated_value'] or 'Total Calculated Value (KES)' }}</label>
+                            <input type="text" name="shares_value" id="share-total-val" readonly value="0" class="w-full bg-gray-100 font-semibold text-teal-800 border border-gray-200 px-3 py-1.5 rounded-lg text-sm cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['annual_benefits'] or 'Annual Benefits' }}</label>
+                            <input type="number" name="annual_benefits" placeholder="{{ texts['ph_annual_benefits'] or 'e.g. 1500' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-teal-500">
+                        </div>
+                        <button type="submit" class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-2 rounded-lg cursor-pointer transition-colors text-center">
+                            {{ texts['commit_new_record'] or 'Commit New Record' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Short-Term Loans -->
+        <div id="tab-short_term" class="tab-content hidden pt-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 overflow-x-auto border border-gray-200 rounded-lg">
+                    <h2 class="text-lg font-bold text-amber-800 p-4 border-b border-gray-200">{{ texts['short_term_disbursals'] or 'Short-Term Loan Disbursals' }}</h2>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-amber-600 text-white text-xs font-semibold uppercase">
+                                <th class="p-3">{{ texts['farmer_name'] or 'Farmer Name' }}</th>
+                                <th class="p-3">{{ texts['principal_amount'] or 'Principal Amount' }}</th>
+                                <th class="p-3">{{ texts['interest'] or 'Interest' }}</th>
+                                <th class="p-3">{{ texts['taken_date'] or 'Taken Date' }}</th>
+                                <th class="p-3">{{ texts['due_date'] or 'Due Date' }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-100 text-gray-700">
+                            {% for row in short_term_tickets %}
+                            <tr class="hover:bg-amber-50/40">
+                                <td class="p-3 font-semibold text-gray-900">{{ row['NAME'] }}</td>
+                                <td class="p-3">{{ row['AMOUNT'] }}</td>
+                                <td class="p-3">{{ row['INTREST'] }}</td>
+                                <td class="p-3">{{ row['TAKEN DATE'] }}</td>
+                                <td class="p-3">{{ row['RETURN DATE'] }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">{{ texts['no_micro_loans'] or 'No active micro-loans logged.' }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- LOAN POLICY & FORM -->
+                <div class="bg-amber-50/60 p-5 rounded-xl border border-amber-100">
+                    <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wide mb-2">{{ texts['microfinance_regulations'] or 'Micro-Finance Loan Regulations' }}</h3>
+                    <p class="text-xs text-gray-600 mb-4 leading-relaxed">
+                        {{ texts['loan_policy_desc'] or 'Fixed interest rate premium of 10% applies directly to all advance principals.' }}
+                    </p>
+                    <hr class="border-amber-100 mb-4">
+                    <h4 class="text-xs font-bold text-gray-700 uppercase mb-3">{{ texts['add_entry_to_sheet'] or 'Add Entry to Sheet' }}</h4>
+                    
+                    <form action="/add-record" method="POST" class="space-y-3">
+                        <input type="hidden" name="target_tab" value="Short term Loans/Advances">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['farmer_full_name'] or 'Farmer Full Name' }}</label>
+                            <input type="text" name="farmer_name" required placeholder="{{ texts['ph_farmer_name'] or 'e.g. Gabriel Odongo' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['contacts'] or 'Contacts' }}</label>
+                            <input type="text" name="contacts" placeholder="{{ texts['ph_contacts'] or 'e.g. +254...' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['location'] or 'Location' }}</label>
+                            <input type="text" name="location" placeholder="{{ texts['ph_location'] or 'e.g. Nairobi' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['principal_requested'] or 'Principal Requested (KES)' }}</label>
+                            <input type="number" name="loan_amount" id="calc-loan-amt" oninput="calculateLoans()" required placeholder="{{ texts['ph_loan_amt'] or 'e.g. 50000' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['calculated_interest'] or 'Calculated Interest (10%)' }}</label>
+                            <input type="text" name="interest" id="loan-interest-val" readonly value="0" class="w-full bg-gray-100 font-semibold text-amber-800 border border-gray-200 px-3 py-1.5 rounded-lg text-sm cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['taken_date'] or 'Taken Date' }}</label>
+                            <input type="date" name="taken_date" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['due_date'] or 'Due Date' }}</label>
+                            <input type="date" name="return_date" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-amber-500">
+                        </div>
+                        <button type="submit" class="w-full mt-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2 rounded-lg cursor-pointer transition-colors text-center">
+                            {{ texts['commit_new_record'] or 'Commit New Record' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Long-Term Loans -->
+        <div id="tab-long_term" class="tab-content hidden pt-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 overflow-x-auto border border-gray-200 rounded-lg">
+                    <h2 class="text-lg font-bold text-orange-800 p-4 border-b border-gray-200">{{ texts['long_term_registry'] or 'Long-Term Loans Registry' }}</h2>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-orange-600 text-white text-xs font-semibold uppercase">
+                                <th class="p-3">{{ texts['date'] or 'Date' }}</th>
+                                <th class="p-3">{{ texts['name'] or 'Name' }}</th>
+                                <th class="p-3">{{ texts['id'] or 'ID' }}</th>
+                                <th class="p-3">{{ texts['loan_taken'] or 'Loan Taken' }}</th>
+                                <th class="p-3">{{ texts['interest'] or 'Interest' }}</th>
+                                <th class="p-3">{{ texts['purpose'] or 'Purpose' }}</th>
+                                <th class="p-3">{{ texts['return_date'] or 'Return Date' }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-100 text-gray-700">
+                            {% for row in long_term_tickets %}
+                            <tr class="hover:bg-orange-50/40">
+                                <td class="p-3 font-semibold text-gray-900">{{ row['DATE'] }}</td>
+                                <td class="p-3">{{ row['NAME'] }}</td>
+                                <td class="p-3">{{ row['ID'] }}</td>
+                                <td class="p-3">{{ row['LOAN TAKEN'] }}</td>
+                                <td class="p-3">{{ row['INTEREST'] }}</td>
+                                <td class="p-3">{{ row['PURPOSE'] }}</td>
+                                <td class="p-3">{{ row['RETURN DATE'] }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="p-4 text-center text-gray-400 italic">{{ texts['no_long_term_loans'] or 'No active long-term loans.' }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- LONG TERM FORM -->
+                <div class="bg-orange-50/60 p-5 rounded-xl border border-orange-100">
+                    <h3 class="text-sm font-bold text-orange-900 uppercase tracking-wide mb-2">{{ texts['long_term_capital'] or 'Long-Term Capital Loans' }}</h3>
+                    <p class="text-xs text-gray-600 mb-4 leading-relaxed">
+                        {{ texts['long_term_desc'] or 'Register long-term funding entries to the database matrix.' }}
+                    </p>
+                    <hr class="border-orange-100 mb-4">
+                    <h4 class="text-xs font-bold text-gray-700 uppercase mb-3">{{ texts['add_entry_to_sheet'] or 'Add Entry to Sheet' }}</h4>
+                    
+                    <form action="/add-record" method="POST" class="space-y-3">
+                        <input type="hidden" name="target_tab" value="Long term Loans/Advances">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['disbursal_date'] or 'Disbursal Date' }}</label>
+                            <input type="date" name="date" required class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['farmer_name'] or 'Farmer Name' }}</label>
+                            <input type="text" name="farmer_name" required placeholder="{{ texts['ph_long_term_name'] or 'e.g. Bethwel' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['government_id'] or 'Government ID' }}</label>
+                            <input type="text" name="id" placeholder="{{ texts['ph_id'] or 'e.g. 11111' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['loan_taken_kes'] or 'Loan Taken (KES)' }}</label>
+                            <input type="number" name="loan_taken" required placeholder="{{ texts['ph_loan_taken'] or 'e.g. 200000' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['interest'] or 'Interest' }}</label>
+                            <input type="number" name="interest" placeholder="{{ texts['ph_interest'] or 'e.g. 20000' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['purpose'] or 'Purpose' }}</label>
+                            <input type="text" name="purpose" placeholder="{{ texts['ph_purpose'] or 'e.g. Buying Tractor' }}" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ texts['return_date'] or 'Return Date' }}</label>
+                            <input type="date" name="return_date" class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-sm focus:outline-orange-500">
+                        </div>
+                        <button type="submit" class="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-2 rounded-lg cursor-pointer transition-colors text-center">
+                            {{ texts['commit_new_record'] or 'Commit New Record' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Processed Payments -->
+        <div id="tab-payment" class="tab-content hidden pt-4">
+            <h2 class="text-xl font-bold text-sky-800 mb-4">{{ texts['processed_payments_ledger'] or 'Processed Payments Ledger' }}</h2>
+            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-sky-700 text-white text-xs font-semibold uppercase">
+                            <th class="p-3">{{ texts['date'] or 'Date' }}</th>
+                            <th class="p-3">{{ texts['beneficiary'] or 'Beneficiary' }}</th>
+                            <th class="p-3">{{ texts['amount_credited'] or 'Amount Credited' }}</th>
+                            <th class="p-3">{{ texts['loan_repaid'] or 'Loan Repaid' }}</th>
+                            <th class="p-3">{{ texts['profit'] or 'Profit' }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100 text-gray-700">
+                        {% for row in payment_tickets %}
+                        <tr class="hover:bg-sky-50/40">
+                            <td class="p-3 font-semibold text-gray-900">{{ row['DATE'] }}</td>
+                            <td class="p-3">{{ row['NAME'] }}</td>
+                            <td class="p-3 text-emerald-600 font-semibold">{{ row['AMOUNT'] }}</td>
+                            <td class="p-3">{{ row['LOAN REPAID'] }}</td>
+                            <td class="p-3 font-semibold text-gray-900">{{ row['PROFIT'] }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">{{ texts['no_payments_verified'] or 'No payments verified in this period.' }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        function switchTab(tabId) {
+            document.getElementById('dataset-panel').classList.remove('hidden');
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            
+            // Smooth scroll to panel
+            document.getElementById('dataset-panel').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function closePanel() {
+            document.getElementById('dataset-panel').classList.add('hidden');
+        }
+
+        function filterFarmers() {
+            const input = document.getElementById('farmer_search');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('#membership_table tbody tr.farmer-row');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function calculateShares() {
+            const count = parseFloat(document.getElementById('calc-shares').value) || 0;
+            const total = count * 10000;
+            document.getElementById('share-total-val').value = total;
+        }
+
+        function calculateLoans() {
+            const principal = parseFloat(document.getElementById('calc-loan-amt').value) || 0;
+            const interest = principal * 0.10;
+            document.getElementById('loan-interest-val').value = interest;
+        }
+
+        // Color-code Membership Type cells into styled pill badges on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const membershipRows = document.querySelectorAll('#membership_table tbody tr.farmer-row');
+
+            membershipRows.forEach(row => {
+                const typeCell = row.cells[4]; // 5th column: Membership Type
+                if (!typeCell) return;
+
+                const rawText = typeCell.textContent.trim();
+                const upperText = rawText.toUpperCase();
+
+                if (upperText.includes('SHARE')) {
+                    // Sky Blue badge for Shareholder members
+                    typeCell.innerHTML = `
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200 shadow-xs">
+                            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                            ${rawText}
+                        </span>`;
+                } else if (upperText.includes('GENERAL')) {
+                    // Emerald Green badge for General members
+                    typeCell.innerHTML = `
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            ${rawText}
+                        </span>`;
+                } else {
+                    // Neutral slate badge for unknown/other values
+                    typeCell.innerHTML = `
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            ${rawText}
+                        </span>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
