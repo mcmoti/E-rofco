@@ -429,6 +429,7 @@ def register_farm():
         return redirect(url_for('login'))
         
     success = False
+    error = None
     if request.method == 'POST':
         farmer_name = request.form.get('farmer_name', '')
         phone = request.form.get('phone', '')
@@ -437,13 +438,16 @@ def register_farm():
         size = request.form.get('size', '')
         crop = request.form.get('crop', 'Sugarcane')
         
-        append_to_sheet("Farm Profiles", [farmer_name, phone, id_no, location, size, crop])
+        s1 = append_to_sheet("Farm Profiles", [farmer_name, phone, id_no, location, size, crop])
         farm_size_formatted = f"{size} Acres" if size and "acre" not in size.lower() else size
-        append_to_sheet("Membership", [farmer_name, phone, id_no, location, crop, farm_size_formatted])
+        s2 = append_to_sheet("Membership", [farmer_name, phone, id_no, location, crop, farm_size_formatted])
         
-        success = True
+        if s1 and s2:
+            success = True
+        else:
+            error = "Failed to sync with Google Sheets. Please check configuration."
 
-    return render_template('register_farm.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success)
+    return render_template('register_farm.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error)
 
 @app.route('/loan-services', methods=['GET', 'POST'])
 def loan_services():
@@ -451,6 +455,7 @@ def loan_services():
         return redirect(url_for('login'))
         
     success = False
+    error = None
     if request.method == 'POST':
         farmer_name = request.form.get('farmer_name', '')
         contacts = request.form.get('contacts', '')
@@ -461,11 +466,13 @@ def loan_services():
         date_today = time.strftime("%Y-%m-%d")
         
         row_data = [farmer_name, contacts, location, amount, interest, date_today, f"{term} Months"]
-        append_to_sheet("Short term Loans/Advances", row_data)
-        success = True
+        if append_to_sheet("Short term Loans/Advances", row_data):
+            success = True
+        else:
+            error = "Failed to sync with Google Sheets. Please check configuration."
 
     farmers_list = fetch_registered_farmers()
-    return render_template('loan_services.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, farmers=farmers_list)
+    return render_template('loan_services.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
 
 @app.route('/transport-logistics', methods=['GET', 'POST'])
 def transport_logistics():
@@ -473,6 +480,7 @@ def transport_logistics():
         return redirect(url_for('login'))
         
     success = False
+    error = None
     if request.method == 'POST':
         farmer_name = request.form.get('farmer_name', '')
         location = request.form.get('location', '')
@@ -481,11 +489,13 @@ def transport_logistics():
         logged_by = session.get('user_name', 'John Doe')
         
         row_data = [farmer_name, location, service_type, dispatch_date, logged_by]
-        append_to_sheet("Transport Logistics", row_data)
-        success = True
+        if append_to_sheet("Transport Logistics", row_data):
+            success = True
+        else:
+            error = "Failed to sync with Google Sheets. Please check configuration."
 
     farmers_list = fetch_registered_farmers()
-    return render_template('transport_logistics.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, farmers=farmers_list)
+    return render_template('transport_logistics.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
 
 @app.route('/shares-management', methods=['GET', 'POST'])
 def shares_management():
@@ -493,6 +503,7 @@ def shares_management():
         return redirect(url_for('login'))
         
     success = False
+    error = None
     if request.method == 'POST':
         farmer_name = request.form.get('farmer_name', '')
         num_shares = request.form.get('number_of_shares', '')
@@ -500,11 +511,13 @@ def shares_management():
         annual_benefits = request.form.get('annual_benefits', '')
         
         row_data = [farmer_name, num_shares, share_value, annual_benefits]
-        append_to_sheet("Shareholding Accounts", row_data)
-        success = True
+        if append_to_sheet("Shareholding Accounts", row_data):
+            success = True
+        else:
+            error = "Failed to sync with Google Sheets. Please check configuration."
 
     farmers_list = fetch_registered_farmers()
-    return render_template('shares_management.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, farmers=farmers_list)
+    return render_template('shares_management.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
 
 @app.route('/weighbridge-tickets')
 @app.route('/production-yields')
