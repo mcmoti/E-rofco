@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}M-ROFCO Hub{% endblock %}</title>
+
+    <!-- Tailwind CSS Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --primary-navy: #1e293b;
+            --accent-green: #16a34a;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top Utility Bar */
+        .top-utility-bar {
+            background: #090d16;
+            color: #94a3b8;
+            font-size: 13px;
+            padding: 10px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .top-utility-bar a { color: #cbd5e1; text-decoration: none; }
+        .top-utility-bar a:hover { color: #ffffff; }
+
+        /* Navigation Header */
+        .main-header {
+            background: #ffffff;
+            padding: 12px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+        .brand-logo span { color: var(--accent-green); }
+
+        .nav-actions { display: flex; align-items: center; gap: 16px; }
+
+        .logout-btn {
+            background-color: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #ffe4e6;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            transition: var(--transition);
+        }
+
+        .logout-btn:hover {
+            background-color: #e11d48;
+            color: #ffffff;
+        }
+
+        /* Role Switcher Pill Navigation */
+        .role-nav-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .role-nav-item {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #475569;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .role-nav-item:hover {
+            background: #ffffff;
+            color: var(--primary-dark);
+        }
+
+        .role-nav-item.active-intake {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        .role-nav-item.active-assessor {
+            background: #16a34a;
+            color: #ffffff;
+        }
+
+        .role-nav-item.active-committee {
+            background: #d97706;
+            color: #ffffff;
+        }
+
+        /* Container for Page Specific Content */
+        .page-body {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 24px;
+            flex: 1;
+        }
+
+        /* Floating Support Button */
+        .floating-support-btn {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: var(--primary-dark);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            z-index: 999;
+        }
+
+        .floating-support-btn:hover { background: var(--accent-green); }
+
+        /* Site Footer */
+        .site-footer {
+            width: 100%;
+            border-top: 1px solid var(--border-color);
+            background: #ffffff;
+            padding: 24px 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- SHARED TOP UTILITY BAR -->
+    <div class="top-utility-bar">
+        <div>
+            <span>📞 <a href="tel:+254712433289">+254 712 433289</a> / <a href="tel:+254799875432">+254 799 875432</a> / <a href="tel:+254716977448">+254 716 977448</a></span> &nbsp;|&nbsp;
+            <span>✉️ <a href="mailto:ogutunyo@gmail.com">ogutunyo@gmail.com</a> / <a href="mailto:kenyowt@gmail.com">kenyowt@gmail.com</a> / <a href="mailto:wycliff105@gmail.com">wycliff105@gmail.com</a></span>
+        </div>
+        <div>
+            <a href="/toggle-language">🌐 Kenya (Swahili / English)</a>
+        </div>
+    </div>
+
+    <!-- SHARED NAVBAR WITH ROLE-BASED NAVIGATION SWITCHER -->
+    <header class="main-header">
+        <a href="/home" class="brand-logo">M-ROFCO <span>Hub</span></a>
+
+        <!-- URD ROLE SWITCHER TABS -->
+        {% if session.get('user_logged_in') %}
+        <nav class="role-nav-container">
+            <a href="/staff/loan-intake" 
+               class="role-nav-item {% if active_role == 'intake' %}active-intake{% endif %}">
+                📞 Staff Intake
+            </a>
+            <a href="/staff/field-assessor" 
+               class="role-nav-item {% if active_role == 'assessor' %}active-assessor{% endif %}">
+                📋 Field Assessor
+            </a>
+            <a href="/staff/credit-committee" 
+               class="role-nav-item {% if active_role == 'committee' %}active-committee{% endif %}">
+                🏛️ Credit Committee
+            </a>
+        </nav>
+        {% endif %}
+
+        <div class="nav-actions">
+            {% if name %}
+            <span style="font-size: 14px; color: var(--text-muted);" class="hidden md:inline">
+                Welcome, <strong>{{ name }}</strong>
+            </span>
+            {% endif %}
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <!-- PAGE SPECIFIC CONTENT GOES HERE -->
+    <main class="page-body">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- SHARED FLOATING SUPPORT WIDGET -->
+    <a href="mailto:ogutunyo@gmail.com" class="floating-support-btn">
+        💬 Contact Support
+    </a>
+
+    <!-- SHARED FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div>Copyright © 2026 M-ROFCO Cooperative Society Ltd. All rights reserved.</div>
+            <div style="display: flex; gap: 16px;">
+                <a href="/privacy-policy" style="color: var(--text-muted); text-decoration: none;">Privacy Policy</a>
+                <a href="/terms-of-use" style="color: var(--text-muted); text-decoration: none;">Terms of Use</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS BLOCK FOR CHILD TEMPLATES -->
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,92 +1,94 @@
-<!DOCTYPE html>
-<html lang="{{ current_lang }}">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ texts['loan_title'] }} - M-ROFCO</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px; display: flex; justify-content: center; }
-        .form-card { background: white; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 100%; max-width: 520px; }
-        h2 { margin: 0 0 8px 0; color: #15803d; font-size: 22px; }
-        p.subtext { color: #64748b; font-size: 14px; margin: 0 0 20px 0; }
-        .search-box { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
-        .search-box label { font-size: 13px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px; }
-        .register-new-btn { display: inline-block; margin-top: 10px; font-size: 13px; color: #15803d; text-decoration: none; font-weight: 600; }
-        .register-new-btn:hover { text-decoration: underline; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
-        input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .btn-submit { width: 100%; background-color: #15803d; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 10px; }
-        .btn-submit:hover { background-color: #166534; }
-        .back-link { display: block; text-align: center; margin-top: 20px; color: #15803d; text-decoration: none; font-size: 14px; font-weight: 500; }
-        .success-banner { background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
-        .info-note { font-size: 12px; color: #64748b; margin-top: 4px; }
-    </style>
-</head>
-<body>
-    <div class="form-card">
-        <h2>{{ texts['loan_title'] }}</h2>
-        <p class="subtext">{{ texts['loan_sub'] }}</p>
+{% extends 'base.html' %}
+
+{% block title %}{{ texts['loan_title'] }} - M-ROFCO{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto my-6">
+    
+    <!-- TOP BACK NAVIGATION -->
+    <div class="mb-6">
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+            ← {{ texts['back_dash'] or 'Back to Dashboard' }}
+        </a>
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
+        <h2 class="text-2xl font-bold text-emerald-700 mb-1">{{ texts['loan_title'] }}</h2>
+        <p class="text-sm text-slate-500 mb-6">{{ texts['loan_sub'] }}</p>
 
         {% if success %}
-            <div class="success-banner">{{ texts['loan_success'] }}</div>
+            <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium rounded-lg flex items-center gap-2">
+                <span>✅</span> {{ texts['loan_success'] }}
+            </div>
         {% endif %}
 
         <!-- Quick Farmer Search & Auto-Fill -->
-        <div class="search-box">
-            <label for="farmer_search">🔎 Search Registered Farmer (Auto-Fill)</label>
-            <input type="text" id="farmer_search" list="farmers_datalist" placeholder="Type farmer name..." oninput="autoFillFarmer(this.value)">
+        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
+            <label for="farmer_search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                🔎 Search Registered Farmer (Auto-Fill)
+            </label>
+            <input type="text" id="farmer_search" list="farmers_datalist" placeholder="Type farmer name..." oninput="autoFillFarmer(this.value)" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all">
             <datalist id="farmers_datalist">
                 {% for f in farmers %}
                     <option value="{{ f.name }}">{{ f.phone }} - {{ f.location }}</option>
                 {% endfor %}
             </datalist>
-            <a href="/register-farm" class="register-new-btn">➕ Farmer Not Registered Yet? Click Here to Register New Farmer</a>
+            <a href="/register-farm" class="inline-block mt-3.5 text-xs text-emerald-700 hover:text-emerald-800 font-bold transition-colors">
+                ➕ Farmer Not Registered Yet? Click Here to Register New Farmer
+            </a>
         </div>
 
-        <form method="POST" action="/loan-services">
-            <div class="form-group">
-                <label for="farmer_name">{{ texts['label_farmer_name'] }}</label>
-                <input type="text" id="farmer_name" name="farmer_name" placeholder="e.g., Gabriel Omondi" required>
+        <form method="POST" action="/loan-services" class="space-y-5">
+            <div>
+                <label for="farmer_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_farmer_name'] }}</label>
+                <input type="text" id="farmer_name" name="farmer_name" placeholder="e.g., Gabriel Omondi" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <div class="form-group">
-                <label for="contacts">{{ texts['label_phone'] }}</label>
-                <input type="text" id="contacts" name="contacts" placeholder="e.g., 0712345678" required>
+            <div>
+                <label for="contacts" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_phone'] }}</label>
+                <input type="text" id="contacts" name="contacts" placeholder="e.g., 0712345678" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <div class="form-group">
-                <label for="location">{{ texts['label_loc'] }}</label>
-                <input type="text" id="location" name="location" placeholder="e.g., Kakamega, Kenya" required>
+            <div>
+                <label for="location" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_loc'] }}</label>
+                <input type="text" id="location" name="location" placeholder="e.g., Kakamega, Kenya" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <div class="form-group">
-                <label for="amount">{{ texts['loan_amt_label'] }}</label>
-                <input type="number" id="amount" name="amount" placeholder="e.g., 20000" required>
-                <div class="info-note">{{ texts['interest_notice'] }}</div>
+            <div>
+                <label for="amount" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['loan_amt_label'] }}</label>
+                <input type="number" id="amount" name="amount" placeholder="e.g., 20000" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                <div class="text-xs text-slate-500 mt-1.5 font-normal">{{ texts['interest_notice'] }}</div>
             </div>
 
-            <div class="form-group">
-                <label for="term">{{ texts['loan_term_label'] }}</label>
-                <input type="number" id="term" name="term" placeholder="e.g., 6" required>
+            <div>
+                <label for="term" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['loan_term_label'] }}</label>
+                <input type="number" id="term" name="term" placeholder="e.g., 6" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <button type="submit" class="btn-submit">{{ texts['loan_btn'] }}</button>
+            <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3 px-4 rounded-lg shadow-xs transition-colors cursor-pointer text-center mt-2">
+                {{ texts['loan_btn'] }}
+            </button>
         </form>
 
-        <a href="/home" class="back-link">{{ texts['back_dash'] }}</a>
+        <a href="/home" class="block text-center mt-6 text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors">
+            {{ texts['back_dash'] }}
+        </a>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        const registeredFarmers = {{ farmers | tojson }};
+{% block scripts %}
+<script>
+    const registeredFarmers = {{ farmers | tojson }};
 
-        function autoFillFarmer(selectedName) {
-            const matched = registeredFarmers.find(f => f.name.toLowerCase() === selectedName.toLowerCase());
-            if (matched) {
-                document.getElementById('farmer_name').value = matched.name;
-                document.getElementById('contacts').value = matched.phone;
-                document.getElementById('location').value = matched.location;
-            }
+    function autoFillFarmer(selectedName) {
+        const matched = registeredFarmers.find(f => f.name.toLowerCase() === selectedName.toLowerCase());
+        if (matched) {
+            document.getElementById('farmer_name').value = matched.name;
+            document.getElementById('contacts').value = matched.phone;
+            document.getElementById('location').value = matched.location;
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}

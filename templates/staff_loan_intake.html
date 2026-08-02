@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Assisted Loan Intake | M-ROFCO Hub{% endblock %}
+
+{% block content %}
+<div class="site-container max-w-5xl mx-auto py-6">
+
+    <div class="mb-6 flex items-center justify-between border-b pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Assisted Loan Origination Portal</h1>
+            <p class="text-sm text-slate-500">Call Center & Branch Staff Interface — Initiate harvest-backed loans on behalf of members.</p>
+        </div>
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200">
+            Assisted Mode Active
+        </span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Member Search & Inputs -->
+        <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            
+            <!-- Member Lookup -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">1. Member Search</label>
+                <div class="flex gap-2">
+                    <input type="text" placeholder="Enter National ID, Phone Number, or Member #..." 
+                           class="w-full text-sm px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="button" class="bg-[#231f60] text-white text-sm font-bold px-5 py-2.5 rounded-lg hover:bg-indigo-900 transition-colors">
+                        Search
+                    </button>
+                </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- Valuation Input Fields -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-4">2. Farm Harvest Parameters</label>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-600 font-medium mb-1">Total Acreage (Acres)</label>
+                        <input type="number" id="acreage" value="3.5" step="0.1" oninput="calculateValuation()"
+                               class="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-600 font-medium mb-1">Est. Yield (Tons / Acre)</label>
+                        <input type="number" id="yieldPerAcre" value="30" step="1" oninput="calculateValuation()"
+                               class="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-600 font-medium mb-1">Factory Price per Ton (KES)</label>
+                        <input type="number" id="factoryPrice" value="5500" step="100" oninput="calculateValuation()"
+                               class="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-600 font-medium mb-1">Transport & Factory Deductions (%)</label>
+                        <input type="number" id="deductionRate" value="15" step="1" oninput="calculateValuation()"
+                               class="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requested Loan Details -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">3. Requested Advance Details</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-600 font-medium mb-1">Loan Purpose</label>
+                        <select class="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
+                            <option>Fertilizer & Inputs Advance</option>
+                            <option>Harvest Labor Costs</option>
+                            <option>Mechanized Tractor Tillage</option>
+                            <option>Emergency Cash Micro-Advance</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-600 font-medium mb-1">Requested Amount (KES)</label>
+                        <input type="number" id="requestedAmount" value="75000" oninput="calculateValuation()"
+                               class="w-full text-sm px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-emerald-600/20">
+                Submit Loan Application for Verification &rarr;
+            </button>
+        </div>
+
+        <!-- Right Column: Live Harvest Valuation Calculator Widget -->
+        <div class="lg:col-span-5 space-y-4">
+            <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-xl border border-slate-800 sticky top-24">
+                <span class="text-[11px] font-bold tracking-widest text-emerald-400 uppercase block mb-1">Real-Time Valuation Engine</span>
+                <h3 class="text-xl font-bold mb-6 text-white">Harvest-Backed Credit Limit</h3>
+
+                <div class="space-y-3 text-sm text-slate-300 border-b border-slate-800 pb-4 mb-4">
+                    <div class="flex justify-between">
+                        <span>Gross Harvest Potential:</span>
+                        <strong id="displayGross" class="text-white">KES 577,500</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Est. Factory & Haul Deductions:</span>
+                        <strong id="displayDeductions" class="text-red-400">- KES 86,625</strong>
+                    </div>
+                    <div class="flex justify-between font-bold text-white pt-2 border-t border-slate-800">
+                        <span>Net Valuation Output:</span>
+                        <span id="displayNet" class="text-emerald-400">KES 490,875</span>
+                    </div>
+                </div>
+
+                <!-- Maximum Loan Cap Indicator (e.g. 50% max LTV) -->
+                <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 mb-6">
+                    <div class="text-xs text-slate-400 mb-1">Max Allowable Loan Limit (50% Cap):</div>
+                    <div id="displayMaxCap" class="text-2xl font-black text-emerald-400">KES 245,438</div>
+                </div>
+
+                <!-- Live Status Alert -->
+                <div id="statusBadge" class="p-3.5 rounded-xl text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-2">
+                    <span>✅</span> Requested loan is within approved credit limits.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function calculateValuation() {
+    const acreage = parseFloat(document.getElementById('acreage').value) || 0;
+    const yieldPerAcre = parseFloat(document.getElementById('yieldPerAcre').value) || 0;
+    const factoryPrice = parseFloat(document.getElementById('factoryPrice').value) || 0;
+    const deductionRate = parseFloat(document.getElementById('deductionRate').value) || 0;
+    const requested = parseFloat(document.getElementById('requestedAmount').value) || 0;
+
+    const totalTonnage = acreage * yieldPerAcre;
+    const grossValuation = totalTonnage * factoryPrice;
+    const deductions = grossValuation * (deductionRate / 100);
+    const netValuation = grossValuation - deductions;
+    const maxLoanCap = netValuation * 0.50; // 50% LTV rule from URD
+
+    document.getElementById('displayGross').innerText = 'KES ' + grossValuation.toLocaleString();
+    document.getElementById('displayDeductions').innerText = '- KES ' + deductions.toLocaleString();
+    document.getElementById('displayNet').innerText = 'KES ' + netValuation.toLocaleString();
+    document.getElementById('displayMaxCap').innerText = 'KES ' + maxLoanCap.toLocaleString();
+
+    const statusBadge = document.getElementById('statusBadge');
+    if (requested > maxLoanCap) {
+        statusBadge.className = "p-3.5 rounded-xl text-xs font-bold bg-amber-950 text-amber-300 border border-amber-800 flex items-center gap-2";
+        statusBadge.innerHTML = "<span>⚠️</span> Requested amount exceeds cap! Requires Credit Committee Override.";
+    } else {
+        statusBadge.className = "p-3.5 rounded-xl text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-2";
+        statusBadge.innerHTML = "<span>✅</span> Requested loan is within approved credit limits.";
+    }
+}
+</script>
+{% endblock %}

@@ -1,68 +1,62 @@
-<!DOCTYPE html>
-<html lang="{{ current_lang }}">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ texts['reg_title'] }} - M-ROFCO</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px; display: flex; justify-content: center; }
-        .form-card { background: white; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 100%; max-width: 520px; }
-        h2 { margin: 0 0 8px 0; color: #15803d; font-size: 22px; }
-        p.subtext { color: #64748b; font-size: 14px; margin: 0 0 24px 0; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
-        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        input:focus, select:focus { outline: none; border-color: #15803d; box-shadow: 0 0 0 2px rgba(21, 128, 61, 0.1); }
-        .location-container { display: flex; gap: 8px; }
-        .location-container input { flex: 1; }
-        .btn-detect { background-color: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap; transition: background-color 0.2s; }
-        .btn-detect:hover { background-color: #cbd5e1; }
-        .btn-submit { width: 100%; background-color: #15803d; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 10px; }
-        .btn-submit:hover { background-color: #166534; }
-        .back-link { display: block; text-align: center; margin-top: 20px; color: #15803d; text-decoration: none; font-size: 14px; font-weight: 500; }
-        .success-banner { background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="form-card">
-        <h2>{{ texts['reg_title'] }}</h2>
-        <p class="subtext">{{ texts['reg_sub'] }}</p>
+{% extends 'base.html' %}
+
+{% block title %}{{ texts['reg_title'] }} - M-ROFCO{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto my-6">
+    
+    <!-- TOP BACK NAVIGATION -->
+    <div class="mb-6">
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+            ← {{ texts['back_dash'] or 'Back to Dashboard' }}
+        </a>
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
+        <h2 class="text-2xl font-bold text-emerald-700 mb-1">{{ texts['reg_title'] }}</h2>
+        <p class="text-sm text-slate-500 mb-6">{{ texts['reg_sub'] }}</p>
 
         {% if success %}
-            <div class="success-banner">{{ texts['reg_success'] }}</div>
+            <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium rounded-lg flex items-center gap-2">
+                <span>✅</span> {{ texts['reg_success'] }}
+            </div>
         {% endif %}
 
-        <form method="POST" action="/register-farm">
-            <div class="form-group">
-                <label for="farmer_name">{{ texts['label_farmer_name'] }}</label>
-                <input type="text" id="farmer_name" name="farmer_name" placeholder="e.g., John Otieno" required>
+        <form method="POST" action="/register-farm" class="space-y-5">
+            <div>
+                <label for="farmer_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_farmer_name'] }}</label>
+                <input type="text" id="farmer_name" name="farmer_name" placeholder="e.g., John Otieno" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <div class="form-group">
-                <label for="phone">{{ texts['label_phone'] }}</label>
-                <input type="tel" id="phone" name="phone" placeholder="e.g., 0712345678" required>
+            <div>
+                <label for="phone" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_phone'] }}</label>
+                <input type="tel" id="phone" name="phone" placeholder="e.g., 0712345678" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <div class="form-group">
-                <label for="id_no">{{ texts['label_id'] }}</label>
-                <input type="text" id="id_no" name="id_no" placeholder="e.g., 28475930" required>
+            <div>
+                <label for="id_no" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_id'] }}</label>
+                <input type="text" id="id_no" name="id_no" placeholder="e.g., 28475930" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <div class="form-group">
-                <label for="location">{{ texts['label_loc'] }}</label>
-                <div class="location-container">
-                    <input type="text" id="location" name="location" placeholder="e.g., Kakamega, Kenya" required>
-                    <button type="button" class="btn-detect" onclick="detectLocation()">📍 Auto-Detect</button>
+            <div>
+                <label for="location" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_loc'] }}</label>
+                <div class="flex gap-2">
+                    <input type="text" id="location" name="location" placeholder="e.g., Kakamega, Kenya" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    <button type="button" onclick="detectLocation()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs px-3.5 py-2.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1">
+                        📍 Auto-Detect
+                    </button>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="size">{{ texts['label_size'] }}</label>
-                <input type="number" step="0.1" id="size" name="size" placeholder="e.g., 2.5" required>
+            <div>
+                <label for="size" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_size'] }}</label>
+                <input type="number" step="0.1" id="size" name="size" placeholder="e.g., 2.5" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
             </div>
 
-            <div class="form-group">
-                <label for="crop">{{ texts['label_crop'] }}</label>
-                <select id="crop" name="crop">
+            <div>
+                <label for="crop" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_crop'] }}</label>
+                <select id="crop" name="crop" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
                     <option value="Sugarcane">Sugarcane</option>
                     <option value="Maize">Maize</option>
                     <option value="Coffee">Coffee</option>
@@ -71,42 +65,48 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn-submit">{{ texts['reg_btn'] }}</button>
+            <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3 px-4 rounded-lg shadow-xs transition-colors cursor-pointer text-center mt-2">
+                {{ texts['reg_btn'] }}
+            </button>
         </form>
 
-        <a href="/home" class="back-link">{{ texts['back_dash'] }}</a>
+        <a href="/home" class="block text-center mt-6 text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors">
+            {{ texts['back_dash'] }}
+        </a>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        function detectLocation() {
-            const locInput = document.getElementById('location');
-            if (navigator.geolocation) {
-                locInput.value = "Detecting location...";
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude.toFixed(4);
-                        const lng = position.coords.longitude.toFixed(4);
-                        
-                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                const city = data.address.city || data.address.town || data.address.village || data.address.county || '';
-                                const country = data.address.country || '';
-                                locInput.value = city ? `${city}, ${country}` : `GPS: ${lat}, ${lng}`;
-                            })
-                            .catch(() => {
-                                locInput.value = `GPS: ${lat}, ${lng}`;
-                            });
-                    },
-                    (error) => {
-                        alert("Unable to retrieve GPS location. Please type your location manually.");
-                        locInput.value = "";
-                    }
-                );
-            } else {
-                alert("Geolocation is not supported by your browser.");
-            }
+{% block scripts %}
+<script>
+    function detectLocation() {
+        const locInput = document.getElementById('location');
+        if (navigator.geolocation) {
+            locInput.value = "Detecting location...";
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude.toFixed(4);
+                    const lng = position.coords.longitude.toFixed(4);
+                    
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const city = data.address.city || data.address.town || data.address.village || data.address.county || '';
+                            const country = data.address.country || '';
+                            locInput.value = city ? `${city}, ${country}` : `GPS: ${lat}, ${lng}`;
+                        })
+                        .catch(() => {
+                            locInput.value = `GPS: ${lat}, ${lng}`;
+                        });
+                },
+                (error) => {
+                    alert("Unable to retrieve GPS location. Please type your location manually.");
+                    locInput.value = "";
+                }
+            );
+        } else {
+            alert("Geolocation is not supported by your browser.");
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}

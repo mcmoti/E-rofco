@@ -1,599 +1,446 @@
-<!DOCTYPE html>
-<html lang="{{ current_lang }}">
-<head>
-    <meta charset="UTF-8">
-    <title>M-ROFCO Hub</title>
-    <style>
-        :root {
-            --primary: #1e293b;         /* Dark Slate */
-            --primary-dark: #0f172a;    /* Black / Charcoal Accent */
-            --primary-light: #f8fafc;   /* Soft Light Gray */
-            --bg-page: #f1f5f9;         /* Neutral Gray Page BG */
-            --bg-container: #ffffff;    /* Clean White Container */
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --border-dark: #cbd5e1;
-        }
+{% extends 'base.html' %}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg-page);
-            margin: 0;
-            padding: 40px 20px 0 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
+{% block title %}Home - M-ROFCO Hub{% endblock %}
 
-        .hub-container {
-            background: var(--bg-container);
-            padding: 36px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 1050px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 40px;
-        }
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-10 py-4">
 
-        .header-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 28px;
-            padding: 20px 24px;
-            background: var(--primary-dark);
-            border-radius: 14px;
-            color: #ffffff;
-        }
+    <!-- 0. HERO WELCOMING BANNER (FULL PHOTO VISIBILITY WITH FROSTED GLASS CONTENT BOX) -->
+    <section class="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200 min-h-[520px] flex items-center p-4 sm:p-8 lg:p-12">
+        <!-- Background Image Container (Full Clarity & Visibility) -->
+        <div class="absolute inset-0 z-0">
+            <img src="{{ url_for('static', filename='images/leadership.jpg') }}" 
+                 alt="M-ROFCO Board Leadership" 
+                 class="w-full h-full object-cover object-center"
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop';">
+        </div>
 
-        .title-area h2 {
-            margin: 0 0 4px 0;
-            color: #ffffff;
-            font-size: 26px;
-            font-weight: 700;
-        }
+        <!-- Ultra-Light Ambient Overlay -->
+        <div class="absolute inset-0 bg-slate-950/20 z-0"></div>
 
-        .user-info {
-            font-size: 14px;
-            color: #94a3b8;
-        }
+        <!-- Hero Content Overlay (Glassmorphism Frosted Box) -->
+        <div class="relative z-10 p-6 sm:p-10 rounded-2xl bg-slate-900/65 backdrop-blur-md border border-white/20 shadow-2xl max-w-xl">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 text-xs font-extrabold uppercase tracking-widest mb-4 shadow-sm">
+                <span>🤝</span> Twende Pamoja • Welcome to M-ROFCO
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight mb-4 drop-shadow-lg">
+                Karibu Member!
+            </h1>
+            
+            <p class="text-sm sm:text-base text-slate-100 leading-relaxed font-normal mb-6 drop-shadow">
+                Welcome to M-ROFCO Cooperative Society, where your agricultural potential meets digital progress. 
+                Experience transparent weighbridge tracking, instant micro-loans, and mechanized farm dispatches designed to empower local farmers and secure community prosperity.
+            </p>
 
-        .user-name {
-            color: #ffffff;
-            font-weight: 700;
-            text-decoration: underline;
-        }
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="/register-farm" class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                    Become a Member &rarr;
+                </a>
+                <a href="#services-section" class="inline-flex items-center justify-center px-5 py-2.5 bg-slate-950/70 hover:bg-slate-900 text-white font-bold text-sm rounded-xl border border-white/30 transition-all duration-200 shadow-md">
+                    Explore Services
+                </a>
+            </div>
+        </div>
+    </section>
 
-        .logout-btn {
-            background-color: #ffffff;
-            color: #e11d48;
-            border: 1px solid #ffe4e6;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
+    <!-- 1. ABOUT SOCIETY SECTION -->
+    <section class="bg-white rounded-2xl p-8 border border-slate-100 shadow-xs">
+        <div class="inline-block px-3.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider rounded-full mb-4">
+            About Society
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 mb-3">
+            {{ texts['about_title'] }} — {{ texts['about_sub'] }}
+        </h2>
+        <p class="text-slate-600 text-base leading-relaxed">
+            M-ROFCO is a cooperative society committed to transforming agricultural management for local smallholder farmers. 
+            Our digital platform facilitates seamless farm profiling, live harvest weighbridge ledger tracking, tractor dispatch requests, 
+            micro-credit loan advances, and transparent shareholding account management directly integrated with cloud registries.
+        </p>
+    </section>
 
-        .logout-btn:hover {
-            background-color: #fff1f2;
-        }
+    <!-- 2. SERVICES WE OFFER SECTION -->
+    <section id="services-section" class="bg-white rounded-2xl p-8 border border-slate-100 shadow-xs">
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                🛠️ Services We Offer
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">Hover over any service card below to view detailed operational insights and quick navigation links.</p>
+        </div>
 
-        /* --- MOTTO & VISION BAR --- */
-        .motto-vision-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 16px;
-            margin-bottom: 30px;
-        }
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-        .mv-card {
-            background: var(--primary-light);
-            color: var(--text-main);
-            padding: 18px 22px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            border-left: 5px solid var(--primary-dark);
-        }
-
-        .mv-card h4 {
-            margin: 0 0 6px 0;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-        }
-
-        .mv-card p {
-            margin: 0;
-            font-size: 14px;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-
-        /* --- DASHBOARD GRID --- */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 24px;
-            border-radius: 14px;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--primary-dark);
-            opacity: 0;
-            transition: opacity 0.25s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
-            border-color: var(--border-dark);
-        }
-
-        .card:hover::before {
-            opacity: 1;
-        }
-
-        .icon-badge {
-            width: 50px;
-            height: 50px;
-            background: var(--primary-light);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 16px;
-            color: var(--primary-dark);
-        }
-
-        .card h3 {
-            margin: 0 0 8px 0;
-            color: var(--text-main);
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .card p {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 13.5px;
-            line-height: 1.5;
-        }
-
-        .highlight-num {
-            color: var(--primary-dark);
-            font-weight: 800;
-        }
-
-        /* --- ABOUT US INTEGRATED SECTION --- */
-        .about-section {
-            margin-top: 10px;
-            padding-top: 30px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .about-box {
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 28px;
-        }
-
-        .about-header-badge {
-            display: inline-block;
-            background: var(--primary-light);
-            color: var(--primary-dark);
-            font-size: 12px;
-            font-weight: 700;
-            padding: 4px 14px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .about-box h2 {
-            margin: 0 0 12px 0;
-            font-size: 22px;
-            color: var(--text-main);
-        }
-
-        .about-desc {
-            color: var(--text-muted);
-            font-size: 14.5px;
-            line-height: 1.65;
-            margin-bottom: 24px;
-        }
-
-        .sub-heading {
-            margin: 24px 0 14px 0;
-            font-size: 17px;
-            color: var(--text-main);
-            font-weight: 700;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 6px;
-        }
-
-        /* --- EXECUTIVE LEADERSHIP GRID --- */
-        .leadership-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .leader-card {
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            overflow: hidden;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .leader-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--border-dark);
-        }
-
-        .leader-img-placeholder {
-            width: 100%;
-            height: 140px;
-            background: var(--primary-light);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            position: relative;
-        }
-
-        .leader-img-placeholder svg {
-            width: 48px;
-            height: 48px;
-        }
-
-        .leader-info {
-            padding: 12px 16px;
-        }
-
-        .leader-title {
-            margin: 0 0 4px 0;
-            font-size: 15px;
-            color: var(--text-main);
-            font-weight: 700;
-        }
-
-        .leader-role {
-            margin: 0;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* --- KEY PARTNERS GRID --- */
-        .partners-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .partner-card {
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 16px;
-            text-align: center;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .partner-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--border-dark);
-        }
-
-        .partner-card a {
-            color: var(--text-main);
-            font-weight: 700;
-            font-size: 14px;
-            text-decoration: none;
-            display: block;
-        }
-
-        .partner-card a:hover {
-            text-decoration: underline;
-        }
-
-        /* --- CONTACT SECTION --- */
-        .contact-box {
-            background: var(--primary-light);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 16px;
-        }
-
-        .contact-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 12px;
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        .contact-list li {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .contact-list a {
-            color: var(--text-main);
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .contact-list a:hover {
-            text-decoration: underline;
-        }
-
-        /* --- FOOTER UTILITY BAR --- */
-        .site-footer {
-            width: 100%;
-            border-top: 1px solid var(--border-color);
-            background: var(--bg-container);
-            padding: 18px 0;
-            margin-top: auto;
-            font-size: 12px;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: center;
-        }
-
-        .footer-content {
-            width: 100%;
-            max-width: 1050px;
-            padding: 0 36px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            box-sizing: border-box;
-        }
-
-        .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .region-select {
-            color: var(--text-main);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .region-select:hover {
-            text-decoration: underline;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .footer-links a:hover {
-            color: var(--text-main);
-            text-decoration: underline;
-        }
-
-        .footer-links span {
-            color: var(--border-dark);
-        }
-    </style>
-</head>
-<body>
-
-    <div class="hub-container">
-        <!-- Top Navigation Header -->
-        <div class="header-section">
-            <div class="title-area">
-                <h2>{{ texts['dash_title'] }}</h2>
-                <div class="user-info">
-                    {{ texts['dash_sub'] }}<span class="user-name">{{ name }}</span>
+            <!-- Service 1: Tractor & Machinery Logistics -->
+            <div class="group relative bg-slate-50 border border-slate-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-emerald-500 hover:bg-white flex flex-col justify-between h-72">
+                <div>
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        🚜
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2 group-hover:text-emerald-700 transition-colors">
+                        Tractor & Machinery Logistics
+                    </h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        On-demand mechanized plowing, harrowing, planting, and crop hauling dispatch services directly to your farm block.
+                    </p>
+                </div>
+                
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Request equipment dispatch</span>
+                    <a href="/transport-logistics" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                        Access Module &rarr;
+                    </a>
                 </div>
             </div>
-            <a href="/logout" class="logout-btn">{{ texts['logout'] }}</a>
-        </div>
 
-        <!-- Motto & Vision Banner -->
-        <div class="motto-vision-bar">
-            <div class="mv-card">
-                <h4>🎯 Society Motto</h4>
-                <p>"Empowering Smallholders, Sustaining Agricultural Growth."</p>
+            <!-- Service 2: Micro-Loans & Inputs -->
+            <div class="group relative bg-slate-50 border border-slate-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-emerald-500 hover:bg-white flex flex-col justify-between h-72">
+                <div>
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        🌱
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2 group-hover:text-emerald-700 transition-colors">
+                        Agricultural Input & Micro-Loans
+                    </h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Low-interest farm advance financing and input credits for high-quality seeds, fertilizers, and crop protection materials.
+                    </p>
+                </div>
+
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Apply for farm credit</span>
+                    <a href="/loan-services" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                        Access Loans &rarr;
+                    </a>
+                </div>
             </div>
-            <div class="mv-card">
-                <h4>👁️ Vision Statement</h4>
-                <p>"To build a modernized, digitally seamless cooperative ecosystem for local farming communities."</p>
+
+            <!-- Service 3: Weighbridge & Yield Auditing -->
+            <div class="group relative bg-slate-50 border border-slate-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-emerald-500 hover:bg-white flex flex-col justify-between h-72">
+                <div>
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        ⚖️
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2 group-hover:text-emerald-700 transition-colors">
+                        Weighbridge & Yield Auditing
+                    </h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Real-time digital net-weight recording and delivery tickets directly linked to sugar mill factories for transparent payouts.
+                    </p>
+                </div>
+
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">View weighbridge logs</span>
+                    <a href="/weighbridge-tickets" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                        View Tickets &rarr;
+                    </a>
+                </div>
             </div>
+
+            <!-- Service 4: Cooperative Shares & Savings -->
+            <div class="group relative bg-slate-50 border border-slate-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-emerald-500 hover:bg-white flex flex-col justify-between h-72">
+                <div>
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        💼
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2 group-hover:text-emerald-700 transition-colors">
+                        Cooperative Shares & Savings
+                    </h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Capital growth through society shares with annual dividend distributions and equity building opportunities for members.
+                    </p>
+                </div>
+
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Manage member equity</span>
+                    <a href="/shares-management" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                        View Shares &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <!-- Service 5: Field Extension & Training -->
+            <div class="group relative bg-slate-50 border border-slate-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-emerald-500 hover:bg-white flex flex-col justify-between h-72">
+                <div>
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        👨‍🌾
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2 group-hover:text-emerald-700 transition-colors">
+                        Field Extension & Farm Mapping
+                    </h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Agronomic advisory services, soil health testing guidance, and land profiling for optimized plot acreage yields.
+                    </p>
+                </div>
+
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Register or profile farm</span>
+                    <a href="/register-farm" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                        Farm Registry &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <!-- Service 6: Factory Supply Chain Integration -->
+            <div class="group relative bg-slate-50 border border-slate-200 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-emerald-500 hover:bg-white flex flex-col justify-between h-72">
+                <div>
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        🏭
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2 group-hover:text-emerald-700 transition-colors">
+                        Factory Supply Chain Integration
+                    </h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Direct access and prioritized harvest delivery scheduling with regional partner processors (Kibos, Chemelil, West Valley).
+                    </p>
+                </div>
+
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Track delivery routes</span>
+                    <a href="/transport-logistics" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                        View Supply Chain &rarr;
+                    </a>
+                </div>
+            </div>
+
         </div>
+    </section>
 
-        <!-- Operations Modules Grid -->
-        <div class="card-grid">
-            <a href="/register-farm" class="card">
-                <div class="icon-badge">🏡</div>
-                <h3>{{ texts['m1'] }}</h3>
-                <p>{{ texts['m1_sub'] }}</p>
-            </a>
-
-            <a href="/transport-logistics" class="card">
-                <div class="icon-badge">🚜</div>
-                <h3>{{ texts['m2'] }}</h3>
-                <p>{{ texts['m2_sub'] }}</p>
-            </a>
-
-            <a href="/weighbridge-tickets" class="card">
-                <div class="icon-badge">📊</div>
-                <h3>{{ texts['m3'] }}</h3>
-                <p><span class="highlight-num">{{ metrics.yield_count }}</span> Yields • <span class="highlight-num">{{ metrics.shareholding_count }}</span> Shares • {{ texts['m3_sub'] }}</p>
-            </a>
-
-            <a href="/loan-services" class="card">
-                <div class="icon-badge">💳</div>
-                <h3>{{ texts['m5'] }}</h3>
-                <p><span class="highlight-num">{{ metrics.loan_count }}</span> Advances • <span class="highlight-num">{{ metrics.payment_count }}</span> Payments • {{ texts['m5_sub'] }}</p>
-            </a>
-
-            <a href="/shares-management" class="card">
-                <div class="icon-badge">📈</div>
-                <h3>{{ texts['m6'] }}</h3>
-                <p>{{ texts['m6_sub'] }}</p>
-            </a>
-        </div>
-
-        <!-- Integrated About Us Section -->
-        <div class="about-section">
-            <div class="about-box">
-                <span class="about-header-badge">About Society</span>
-                <h2>{{ texts['about_title'] }} — {{ texts['about_sub'] }}</h2>
-                <p class="about-desc">
-                    E-ROFCO is a cooperative society committed to transforming agricultural management for local smallholder farmers. 
-                    Our digital platform facilitates seamless farm profiling, live harvest weighbridge ledger tracking, tractor dispatch requests, 
-                    micro-credit loan advances, and transparent shareholding account management directly integrated with cloud registries.
+    <!-- 2.5 FIELD OPERATIONS GALLERY SECTION -->
+    <section class="bg-white rounded-2xl p-8 border border-slate-100 shadow-xs">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    📸 Field Operations & Highlights
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    Visual records from member farm visits, community gatherings, and equipment dispatches.
                 </p>
+            </div>
+            <a href="/gallery" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs self-start md:self-auto">
+                View Full Gallery &rarr;
+            </a>
+        </div>
 
-                <!-- Executive Leadership -->
-                <h3 class="sub-heading">👔 {{ texts['about_leadership'] }}</h3>
-                <div class="leadership-grid">
-                    <div class="leader-card">
-                        <div class="leader-img-placeholder">
-                            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        </div>
-                        <div class="leader-info">
-                            <h4 class="leader-title">{{ texts['role_chairman'] }}</h4>
-                            <p class="leader-role">Executive Board Chair</p>
-                        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% if photos %}
+                {% for photo in photos %}
+                <div class="group bg-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                    <div class="h-44 bg-slate-200 overflow-hidden relative">
+                        <img src="{{ url_for('static', filename='images/' + photo) }}" 
+                             alt="Field Operation Photo" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                     </div>
-
-                    <div class="leader-card">
-                        <div class="leader-img-placeholder">
-                            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        </div>
-                        <div class="leader-info">
-                            <h4 class="leader-title">{{ texts['role_treasurer'] }}</h4>
-                            <p class="leader-role">Financial Officer</p>
-                        </div>
-                    </div>
-
-                    <div class="leader-card">
-                        <div class="leader-img-placeholder">
-                            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        </div>
-                        <div class="leader-info">
-                            <h4 class="leader-title">{{ texts['role_secretary'] }}</h4>
-                            <p class="leader-role">Administrative Head</p>
-                        </div>
+                    <div class="p-3 text-center">
+                        <p class="text-xs font-bold text-slate-800 truncate">{{ photo.rsplit('.', 1)[0].replace('_', ' ').replace('-', ' ') }}</p>
                     </div>
                 </div>
-
-                <!-- Key Partners -->
-                <h3 class="sub-heading">🤝 {{ texts['about_partners'] }}</h3>
-                <div class="partners-grid">
-                    <div class="partner-card">
-                        <a href="https://www.kibossugar.co.ke/" target="_blank" rel="noopener noreferrer">Kibos Sugar</a>
+                {% endfor %}
+            {% else %}
+                <!-- Fallback Placeholders -->
+                <div class="group bg-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                    <div class="h-44 bg-slate-200 overflow-hidden relative">
+                        <img src="{{ url_for('static', filename='images/photo1.jpg') }}" alt="Member Group Meeting" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1592982537447-7440770cbfc9?q=80&w=400&auto=format&fit=crop';">
                     </div>
-                    <div class="partner-card">
-                        <a href="https://www.kisumu.go.ke/chemelil-sugar-factory-roars-back-to-life-after-major-revamp/" target="_blank" rel="noopener noreferrer">Chemilil Sugar Factory</a>
-                    </div>
-                    <div class="partner-card">
-                        <a href="#" onclick="return false;">West Valley Sugar Company</a>
-                    </div>
-                    <div class="partner-card">
-                        <a href="https://www.shofco.org/" target="_blank" rel="noopener noreferrer">SHOFCO</a>
+                    <div class="p-3 text-center">
+                        <p class="text-xs font-bold text-slate-800">Member Group Meeting</p>
                     </div>
                 </div>
-
-                <!-- Contact Section -->
-                <h3 class="sub-heading">📞 Get in Touch</h3>
-                <div class="contact-box">
-                    <ul class="contact-list">
-                        <li>
-                            <strong>Phone:</strong> +254 700 000000
-                        </li>
-                        <li>
-                            <strong>Email:</strong> <a href="mailto:info@e-rofco.co.ke">info@e-rofco.co.ke</a>
-                        </li>
-                        <li>
-                            <strong>Facebook:</strong> <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Follow M-ROFCO on Facebook</a>
-                        </li>
-                    </ul>
+                <div class="group bg-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                    <div class="h-44 bg-slate-200 overflow-hidden relative">
+                        <img src="{{ url_for('static', filename='images/photo2.jpg') }}" alt="Field Inspection" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1586771107445-d3ca888129ff?q=80&w=400&auto=format&fit=crop';">
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-xs font-bold text-slate-800">Field Inspection</p>
+                    </div>
                 </div>
+                <div class="group bg-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                    <div class="h-44 bg-slate-200 overflow-hidden relative">
+                        <img src="{{ url_for('static', filename='images/photo3.jpg') }}" alt="Site Operations" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=400&auto=format&fit=crop';">
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-xs font-bold text-slate-800">Site Operations</p>
+                    </div>
+                </div>
+                <div class="group bg-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                    <div class="h-44 bg-slate-200 overflow-hidden relative">
+                        <img src="{{ url_for('static', filename='images/photo4.jpg') }}" alt="Transport Logistics" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530587191325-3db32d826c18?q=80&w=400&auto=format&fit=crop';">
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-xs font-bold text-slate-800">Transport Logistics</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- 3. SOCIETY MOTTO & VISION STATEMENT -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Motto -->
+        <div class="bg-emerald-900 text-white rounded-2xl p-8 shadow-xs flex flex-col justify-between border-l-4 border-emerald-500">
+            <div>
+                <div class="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">🎯 Society Motto</div>
+                <h2 class="text-2xl font-bold mb-3">Empowering Smallholders, Sustaining Growth</h2>
+                <p class="text-emerald-100 text-sm leading-relaxed">
+                    Uniting smallholder farmers through technology, financial inclusion, and fair agricultural logistics to ensure long-term community prosperity.
+                </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-emerald-800/80 text-xs text-emerald-300 font-medium">
+                🤝 Stronger Together in Farming
             </div>
         </div>
-    </div>
 
-    <!-- SITE FOOTER BAR -->
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-left">
-                <a href="/toggle-language" class="region-select">🌐 Kenya (Swahili / English)</a>
-                <span>|</span>
-                <div>Copyright © 2026 M-ROFCO Cooperative Society Ltd. All rights reserved.</div>
+        <!-- Vision Statement -->
+        <div class="bg-slate-900 text-white rounded-2xl p-8 shadow-xs flex flex-col justify-between border-l-4 border-emerald-500">
+            <div>
+                <div class="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">👁️ Vision Statement</div>
+                <h2 class="text-2xl font-bold mb-3">Modern Agricultural Ecosystem</h2>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    To build a modernized, digitally seamless cooperative ecosystem offering transparent weighbridge records, instant credit access, and optimized farm-to-factory supply chains.
+                </p>
             </div>
-            <div class="footer-links">
-                <a href="/privacy-policy">Privacy Policy</a>
-                <span>|</span>
-                <a href="/terms-of-use">Terms of Use</a>
-                <span>|</span>
-                <a href="/legal">Legal Notices</a>
-                <span>|</span>
-                <a href="/sitemap">Site Map</a>
+            <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-400 font-medium">
+                🚀 Innovation for Sustainable Yields
             </div>
         </div>
-    </footer>
+    </section>
 
-</body>
-</html>
+    <!-- 4. OPERATIONAL MODULES GRID -->
+    <section>
+        <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+            ⚡ Operational Modules
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <a href="/register-farm" class="bg-white border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col group">
+                <div class="w-13 h-13 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-colors">
+                    🏡
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{{ texts['m1'] }}</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">{{ texts['m1_sub'] }}</p>
+            </a>
+
+            <a href="/transport-logistics" class="bg-white border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col group">
+                <div class="w-13 h-13 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-colors">
+                    🚜
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{{ texts['m2'] }}</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">{{ texts['m2_sub'] }}</p>
+            </a>
+
+            <a href="/weighbridge-tickets" class="bg-white border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col group">
+                <div class="w-13 h-13 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-colors">
+                    📊
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{{ texts['m3'] }}</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">
+                    <span class="text-emerald-600 font-extrabold">{{ metrics.yield_count }}</span> Yields • 
+                    <span class="text-emerald-600 font-extrabold">{{ metrics.shareholding_count }}</span> Shares • 
+                    {{ texts['m3_sub'] }}
+                </p>
+            </a>
+
+            <a href="/loan-services" class="bg-white border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col group">
+                <div class="w-13 h-13 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-colors">
+                    💳
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{{ texts['m5'] }}</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">
+                    <span class="text-emerald-600 font-extrabold">{{ metrics.loan_count }}</span> Advances • 
+                    <span class="text-emerald-600 font-extrabold">{{ metrics.payment_count }}</span> Payments • 
+                    {{ texts['m5_sub'] }}
+                </p>
+            </a>
+
+            <a href="/shares-management" class="bg-white border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col group">
+                <div class="w-13 h-13 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-colors">
+                    📈
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{{ texts['m6'] }}</h3>
+                <p class="text-slate-500 text-sm leading-relaxed">{{ texts['m6_sub'] }}</p>
+            </a>
+        </div>
+    </section>
+
+    <!-- 5. EXECUTIVE LEADERSHIP -->
+    <section class="bg-white rounded-2xl p-8 border border-slate-100 shadow-xs">
+        <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+            👔 {{ texts['about_leadership'] }}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center hover:border-slate-300 transition-colors">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-4">
+                    👤
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">{{ texts['role_chairman'] }}</h3>
+                <p class="text-xs text-slate-500 mt-1">Executive Board Chair</p>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center hover:border-slate-300 transition-colors">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-4">
+                    👤
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">{{ texts['role_treasurer'] }}</h3>
+                <p class="text-xs text-slate-500 mt-1">Financial Officer</p>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center hover:border-slate-300 transition-colors">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-4">
+                    👤
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">{{ texts['role_secretary'] }}</h3>
+                <p class="text-xs text-slate-500 mt-1">Administrative Head</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. KEY PARTNERS -->
+    <section class="bg-white rounded-2xl p-8 border border-slate-100 shadow-xs">
+        <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+            🤝 {{ texts['about_partners'] }}
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <a href="https://www.kibossugar.co.ke/" target="_blank" rel="noopener noreferrer" class="border border-slate-200 bg-slate-50 hover:bg-white hover:border-emerald-600 rounded-xl p-4 text-center font-bold text-slate-700 hover:text-emerald-700 text-sm flex items-center justify-center h-20 transition-all">
+                Kibos Sugar
+            </a>
+            <a href="https://www.kisumu.go.ke/chemelil-sugar-factory-roars-back-to-life-after-major-revamp/" target="_blank" rel="noopener noreferrer" class="border border-slate-200 bg-slate-50 hover:bg-white hover:border-emerald-600 rounded-xl p-4 text-center font-bold text-slate-700 hover:text-emerald-700 text-sm flex items-center justify-center h-20 transition-all">
+                Chemilil Sugar Factory
+            </a>
+            <div class="border border-slate-200 bg-slate-50 rounded-xl p-4 text-center font-bold text-slate-700 text-sm flex items-center justify-center h-20">
+                West Valley Sugar Company
+            </div>
+            <a href="https://www.shofco.org/" target="_blank" rel="noopener noreferrer" class="border border-slate-200 bg-slate-50 hover:bg-white hover:border-emerald-600 rounded-xl p-4 text-center font-bold text-slate-700 hover:text-emerald-700 text-sm flex items-center justify-center h-20 transition-all">
+                SHOFCO
+            </a>
+        </div>
+    </section>
+
+    <!-- 7. GET IN TOUCH / CONTACT BOX -->
+    <section class="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            📞 Get in Touch
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span class="font-bold text-slate-800">Phone:</span>
+                <span class="font-semibold text-slate-700">
+                    <a href="tel:+254712433289" class="hover:text-emerald-600 transition-colors">+254 712 433289</a> / 
+                    <a href="tel:+254799875432" class="hover:text-emerald-600 transition-colors">+254 799 875432</a> / 
+                    <a href="tel:+254716977448" class="hover:text-emerald-600 transition-colors">+254 716 977448</a>
+                </span>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span class="font-bold text-slate-800">Email:</span> 
+                <span class="font-semibold text-slate-700">
+                    <a href="mailto:ogutunyo@gmail.com" class="text-emerald-600 hover:underline font-semibold">ogutunyo@gmail.com</a> / 
+                    <a href="mailto:kenyowt@gmail.com" class="text-emerald-600 hover:underline font-semibold">kenyowt@gmail.com</a> / 
+                    <a href="mailto:wycliff105@gmail.com" class="text-emerald-600 hover:underline font-semibold">wycliff105@gmail.com</a>
+                </span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-800">Facebook:</span> 
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:underline font-semibold">Follow M-ROFCO on Facebook</a>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

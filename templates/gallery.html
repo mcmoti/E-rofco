@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Field Operations Gallery - M-ROFCO Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8 py-4">
+
+    <!-- Header & Navigation -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-6 border border-slate-100 shadow-xs">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center gap-2">
+                📸 Field Operations & Event Gallery
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Visual records of member visits, group meetings, tractor dispatches, and field logistics.
+            </p>
+        </div>
+        <a href="{{ url_for('home') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors shadow-xs self-start sm:self-auto">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Gallery Grid -->
+    {% if photos %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for photo in photos %}
+        <div class="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div class="h-56 bg-slate-100 overflow-hidden relative">
+                <img src="{{ url_for('static', filename='images/' + photo) }}" 
+                     alt="Field Operation Photo"
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                     loading="lazy">
+            </div>
+            <div class="p-4 text-center border-t border-slate-100">
+                <p class="text-xs font-bold text-slate-800 capitalize truncate">
+                    {{ photo.rsplit('.', 1)[0].replace('_', ' ').replace('-', ' ') }}
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-xs max-w-2xl mx-auto">
+        <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
+            🖼️
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">No Photos Found</h3>
+        <p class="text-sm text-slate-500 mb-4">
+            Upload operational photos to your project's <code class="bg-slate-100 px-2 py-0.5 rounded text-emerald-700 font-mono text-xs">static/images/</code> folder to display them here automatically.
+        </p>
+        <a href="{{ url_for('home') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors">
+            Return to Dashboard
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
