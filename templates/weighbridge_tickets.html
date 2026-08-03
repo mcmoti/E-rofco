@@ -32,7 +32,7 @@
         <div class="metric-card bg-white p-4 rounded-xl shadow-xs border-l-4 border-emerald-600 flex flex-col justify-between group">
             <div>
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{{ texts['membership_records'] or 'Membership' }}</p>
-                <p class="text-xl font-extrabold text-slate-800 mt-1">{{ membership_tickets|length if membership_tickets else (members|length if members else 0) }}</p>
+                <p class="text-xl font-extrabold text-slate-800 mt-1">{{ membership_tickets|length if membership_tickets else 0 }}</p>
             </div>
             <button onclick="switchTab('membership')" class="mt-3 w-full bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white text-xs font-bold py-1.5 rounded-lg transition-colors cursor-pointer text-center">
                 {{ texts['view_membership'] or 'View Members' }}
@@ -97,7 +97,7 @@
     </div>
 
     <!-- DATASET SCOPE PANEL -->
-    <div id="dataset-panel" class="max-w-7xl mx-auto bg-white rounded-2xl shadow-xs p-6 border border-slate-200 hidden relative">
+    <div id="dataset-panel" class="max-w-7xl mx-auto bg-white rounded-2xl shadow-xs p-6 border border-slate-200 hidden relative mb-8">
         
         <!-- INSTANT ACTION BUTTONS GROUP -->
         <div class="absolute top-4 right-4 flex items-center gap-2">
@@ -118,41 +118,44 @@
             </button>
         </div>
 
-        <!-- Tab 1: Membership Dataset & Live Search -->
+        <!-- Global Search Bar inside panel -->
+        <div class="mb-5 bg-slate-50 p-3.5 rounded-xl border border-slate-200 max-w-xl">
+            <label for="farmer_search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">🔎 {{ texts['filter_membership_records'] or 'Filter Records' }}</label>
+            <input type="text" id="farmer_search" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" placeholder="{{ texts['search_membership_ph'] or 'Type keyword to filter current table...' }}" onkeyup="filterFarmers()">
+        </div>
+
+        <!-- Tab 1: Membership Dataset -->
         <div id="tab-membership" class="tab-content hidden pt-2">
             <h2 class="text-lg font-bold text-emerald-800 mb-0.5">{{ texts['master_membership_dir'] or 'Master Membership Directory' }}</h2>
             <p class="text-xs text-slate-500 mb-4">{{ texts['direct_live_sync'] or 'Live dynamic Google Sheets membership database synchronization.' }}</p>
 
-            <!-- Instant Search Bar -->
-            <div class="mb-5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                <label for="farmer_search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">🔎 {{ texts['filter_membership_records'] or 'Filter Membership Records' }}</label>
-                <input type="text" id="farmer_search" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" placeholder="{{ texts['search_membership_ph'] or 'Type name, contact, ID, location, or member type...' }}" onkeyup="filterFarmers()">
-            </div>
-
             <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="w-full text-left border-collapse" id="membership_table">
+                <table class="w-full text-left border-collapse data-table">
                     <thead>
                         <tr class="bg-emerald-700 text-white text-xs font-semibold uppercase">
-                            <th class="p-3">{{ texts['farmer_full_name'] or 'Farmer Full Name' }}</th>
+                            <th class="p-3">{{ texts['farmer_full_name'] or 'Farmer Name' }}</th>
                             <th class="p-3">{{ texts['phone_contact'] or 'Phone Contact' }}</th>
                             <th class="p-3">{{ texts['national_id'] or 'National ID' }}</th>
-                            <th class="p-3">{{ texts['location_region'] or 'Location / Region' }}</th>
-                            <th class="p-3">{{ texts['membership_type'] or 'Membership Type' }}</th>
+                            <th class="p-3">{{ texts['location_region'] or 'Location' }}</th>
+                            <th class="p-3">{{ texts['membership_type'] or 'Type' }}</th>
                         </tr>
                     </thead>
                     <tbody class="text-sm divide-y divide-slate-100 text-slate-700">
-                        {% set active_members = membership_tickets if membership_tickets else members %}
-                        {% for row in active_members %}
+                        {% for row in membership_tickets %}
                         <tr class="farmer-row hover:bg-emerald-50/40">
                             <td class="p-3 font-semibold text-slate-900">{{ row.get('NAME') or row.get('Farmer Name') or row.get('Name') or 'N/A' }}</td>
                             <td class="p-3">{{ row.get('PHONE CONTACT') or row.get('Phone Number') or row.get('Contacts') or 'N/A' }}</td>
                             <td class="p-3">{{ row.get('ID') or row.get('National ID') or 'N/A' }}</td>
                             <td class="p-3">{{ row.get('LOCATION') or row.get('Location') or row.get('Region') or 'N/A' }}</td>
-                            <td class="p-3">{{ row.get('MEMBERSHIP TYPE') or row.get('Crop') or row.get('Type') or 'Standard' }}</td>
+                            <td class="p-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                    {{ row.get('TYPE(GENERAL/SHAREHOLDER)') or row.get('MEMBERSHIP TYPE') or row.get('Type') or 'GENERAL' }}
+                                </span>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="p-4 text-center text-slate-500">No membership records found.</td>
+                            <td colspan="5" class="p-4 text-center text-slate-500">No membership records found in Google Sheet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -160,9 +163,193 @@
             </div>
         </div>
 
-        <!-- Embedded Live Sheet Frame View -->
+        <!-- Tab 2: Shareholding Accounts -->
+        <div id="tab-shareholding" class="tab-content hidden pt-2">
+            <h2 class="text-lg font-bold text-teal-800 mb-0.5">Shareholding Accounts</h2>
+            <p class="text-xs text-slate-500 mb-4">Member capital deposits and accumulated dividends.</p>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse data-table">
+                    <thead>
+                        <tr class="bg-teal-700 text-white text-xs font-semibold uppercase">
+                            <th class="p-3">Farmer Name</th>
+                            <th class="p-3">Number of Shares</th>
+                            <th class="p-3">Share Value (KES)</th>
+                            <th class="p-3">Annual Dividend (KES)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100 text-slate-700">
+                        {% for row in shareholding_tickets %}
+                        <tr class="farmer-row hover:bg-teal-50/40">
+                            <td class="p-3 font-semibold text-slate-900">{{ row.get('Farmer Name') or row.get('NAME') or row.get('Name') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Shares Count') or row.get('Number of Shares') or row.get('Shares') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Shares Value') or row.get('Share Value') or 'N/A' }}</td>
+                            <td class="p-3 font-medium text-emerald-600">{{ row.get('Annual Benefits') or row.get('Dividend') or 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="p-4 text-center text-slate-500">No shareholding records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Short Term Loans -->
+        <div id="tab-short_term" class="tab-content hidden pt-2">
+            <h2 class="text-lg font-bold text-amber-800 mb-0.5">Short Term Loans & Advances</h2>
+            <p class="text-xs text-slate-500 mb-4">Input financing and operational crop advances.</p>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse data-table">
+                    <thead>
+                        <tr class="bg-amber-600 text-white text-xs font-semibold uppercase">
+                            <th class="p-3">Member Name</th>
+                            <th class="p-3">Contact</th>
+                            <th class="p-3">Location</th>
+                            <th class="p-3">Amount (KES)</th>
+                            <th class="p-3">Interest</th>
+                            <th class="p-3">Issue Date</th>
+                            <th class="p-3">Term</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100 text-slate-700">
+                        {% for row in short_term_tickets %}
+                        <tr class="farmer-row hover:bg-amber-50/40">
+                            <td class="p-3 font-semibold text-slate-900">{{ row.get('Farmer Name') or row.get('NAME') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Contacts') or row.get('PHONE CONTACT') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Location') or row.get('LOCATION') or 'N/A' }}</td>
+                            <td class="p-3 font-bold text-slate-900">{{ row.get('Loan Amount') or row.get('Amount') or 'N/A' }}</td>
+                            <td class="p-3 text-amber-700">{{ row.get('Interest') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Taken Date') or row.get('Date') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Return Date') or row.get('Term') or 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="p-4 text-center text-slate-500">No short-term loan records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 4: Long Term Loans -->
+        <div id="tab-long_term" class="tab-content hidden pt-2">
+            <h2 class="text-lg font-bold text-orange-800 mb-0.5">Long Term Loans & Capital Development</h2>
+            <p class="text-xs text-slate-500 mb-4">Extended asset loans and land development financing.</p>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse data-table">
+                    <thead>
+                        <tr class="bg-orange-700 text-white text-xs font-semibold uppercase">
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Member Name</th>
+                            <th class="p-3">National ID</th>
+                            <th class="p-3">Loan Amount (KES)</th>
+                            <th class="p-3">Purpose</th>
+                            <th class="p-3">Return Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100 text-slate-700">
+                        {% for row in long_term_tickets %}
+                        <tr class="farmer-row hover:bg-orange-50/40">
+                            <td class="p-3">{{ row.get('Date') or 'N/A' }}</td>
+                            <td class="p-3 font-semibold text-slate-900">{{ row.get('Farmer Name') or row.get('NAME') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('ID') or row.get('National ID') or 'N/A' }}</td>
+                            <td class="p-3 font-bold text-slate-900">{{ row.get('Loan Taken') or row.get('Amount') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Purpose') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Return Date') or 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="p-4 text-center text-slate-500">No long-term loan records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 5: Processed Payments -->
+        <div id="tab-payment" class="tab-content hidden pt-2">
+            <h2 class="text-lg font-bold text-sky-800 mb-0.5">Processed Payments</h2>
+            <p class="text-xs text-slate-500 mb-4">Factory delivery payouts and cleared harvest disbursements.</p>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse data-table">
+                    <thead>
+                        <tr class="bg-sky-700 text-white text-xs font-semibold uppercase">
+                            <th class="p-3">Payment ID / Date</th>
+                            <th class="p-3">Farmer Name</th>
+                            <th class="p-3">Gross Amount (KES)</th>
+                            <th class="p-3">Deductions</th>
+                            <th class="p-3">Net Paid (KES)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100 text-slate-700">
+                        {% for row in payment_tickets %}
+                        <tr class="farmer-row hover:bg-sky-50/40">
+                            <td class="p-3">{{ row.get('Date') or row.get('Payment ID') or 'N/A' }}</td>
+                            <td class="p-3 font-semibold text-slate-900">{{ row.get('Farmer Name') or row.get('NAME') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Gross Amount') or 'N/A' }}</td>
+                            <td class="p-3 text-rose-600">{{ row.get('Deductions') or 'N/A' }}</td>
+                            <td class="p-3 font-extrabold text-emerald-700">{{ row.get('Net Amount') or row.get('Paid') or 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="p-4 text-center text-slate-500">No processed payment records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 6: Transport & Machinery Logistics -->
+        <div id="tab-transport" class="tab-content hidden pt-2">
+            <h2 class="text-lg font-bold text-indigo-800 mb-0.5">Machinery & Logistics Dispatches</h2>
+            <p class="text-xs text-slate-500 mb-4">Tractor tillage, crop haulage, and field preparation bookings.</p>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse data-table">
+                    <thead>
+                        <tr class="bg-indigo-700 text-white text-xs font-semibold uppercase">
+                            <th class="p-3">Farmer Name</th>
+                            <th class="p-3">Location / Zone</th>
+                            <th class="p-3">Service Type</th>
+                            <th class="p-3">Dispatch Date</th>
+                            <th class="p-3">Logged By</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100 text-slate-700">
+                        {% for row in transport_tickets %}
+                        <tr class="farmer-row hover:bg-indigo-50/40">
+                            <td class="p-3 font-semibold text-slate-900">{{ row.get('Farmer Name') or row.get('NAME') or 'N/A' }}</td>
+                            <td class="p-3">{{ row.get('Location') or row.get('LOCATION') or 'N/A' }}</td>
+                            <td class="p-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800">
+                                    {{ row.get('Service Type') or 'Plowing' }}
+                                </span>
+                            </td>
+                            <td class="p-3">{{ row.get('Dispatch Date') or 'N/A' }}</td>
+                            <td class="p-3 text-slate-500">{{ row.get('Logged By') or 'Staff' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="p-4 text-center text-slate-500">{{ texts['no_transport_entries'] or 'No tractor dispatches booked yet.' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Embedded Live Sheet View -->
         <div id="tab-embedded_sheet" class="tab-content hidden pt-2">
-            <iframe src="https://docs.google.com/spreadsheets/d/{{ spreadsheet_id }}/pubhtml?widget=true&amp;headers=false" class="w-full h-96 border-0 rounded-xl"></iframe>
+            <h2 class="text-lg font-bold text-slate-800 mb-2">Google Sheets Live Interactive Frame</h2>
+            <iframe src="https://docs.google.com/spreadsheets/d/{{ spreadsheet_id }}/pubhtml?widget=true&amp;headers=false" class="w-full h-[500px] border border-slate-200 rounded-xl"></iframe>
         </div>
 
     </div>
@@ -178,6 +365,7 @@
             const activeTab = document.getElementById('tab-' + tabId);
             if (activeTab) {
                 activeTab.classList.remove('hidden');
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 

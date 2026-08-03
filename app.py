@@ -291,16 +291,16 @@ def fetch_sheet_records(tab_name):
         client = get_gspread_client()
         workbook = client.open_by_key(SPREADSHEET_ID)
         worksheet = workbook.worksheet(tab_name)
-        return worksheet.get_all_records()
+        records = worksheet.get_all_records()
+        print(f"DEBUG [{tab_name}]: Successfully retrieved {len(records)} records.")
+        return records
     except Exception as e:
-        print(f"Error reading records from tab [{tab_name}]: {e}")
+        print(f"DEBUG ERROR [{tab_name}]: Failed to retrieve records - {e}")
         return []
 
 def fetch_registered_farmers():
     farmers = []
     records = fetch_sheet_records("Membership")
-    if not records:
-        records = fetch_sheet_records("Farm Profiles")
         
     for r in records:
         farmers.append({
@@ -330,7 +330,7 @@ def ensure_language():
     if 'lang' not in session:
         session['lang'] = 'en'
 
-# --- EXISTING APPLICATION ROUTES ---
+# --- APPLICATION ROUTES ---
 @app.route('/')
 def index():
     return render_template('welcome.html', texts=TEXTS[session['lang']], current_lang=session['lang'])
@@ -384,19 +384,11 @@ def home():
     else:
         metrics = {"yield_count": 0, "shareholding_count": 0, "loan_count": 0, "payment_count": 0, "transport_count": 0}
         try:
-            client = get_gspread_client()
-            workbook = client.open_by_key(SPREADSHEET_ID)
-            
-            try: metrics["yield_count"] = len(workbook.worksheet("Membership").get_all_records())
-            except: pass
-            try: metrics["shareholding_count"] = len(workbook.worksheet("Shareholding Accounts").get_all_records())
-            except: pass
-            try: metrics["loan_count"] = len(workbook.worksheet("Short term Loans/Advances").get_all_records())
-            except: pass
-            try: metrics["payment_count"] = len(workbook.worksheet("Processed Payments").get_all_records())
-            except: pass
-            try: metrics["transport_count"] = len(workbook.worksheet("Transport Logistics").get_all_records())
-            except: pass
+            metrics["yield_count"] = len(fetch_sheet_records("Membership"))
+            metrics["shareholding_count"] = len(fetch_sheet_records("Shareholding Accounts"))
+            metrics["loan_count"] = len(fetch_sheet_records("Short term Loans/Advances"))
+            metrics["payment_count"] = len(fetch_sheet_records("Processed Payments"))
+            metrics["transport_count"] = len(fetch_sheet_records("Transport Logistics"))
                 
             DASHBOARD_CACHE["data"] = metrics
             DASHBOARD_CACHE["last_updated"] = current_time
@@ -438,11 +430,10 @@ def register_farm():
         size = request.form.get('size', '')
         crop = request.form.get('crop', 'Sugarcane')
         
-        s1 = append_to_sheet("Farm Profiles", [farmer_name, phone, id_no, location, size, crop])
         farm_size_formatted = f"{size} Acres" if size and "acre" not in size.lower() else size
-        s2 = append_to_sheet("Membership", [farmer_name, phone, id_no, location, crop, farm_size_formatted])
+        s = append_to_sheet("Membership", [farmer_name, phone, id_no, location, "GENERAL", farm_size_formatted])
         
-        if s1 and s2:
+        if s:
             success = True
         else:
             error = "Failed to sync with Google Sheets. Please check configuration."
@@ -532,28 +523,16 @@ def weighbridge_tickets():
     payment_tickets = fetch_sheet_records("Processed Payments")
     transport_tickets = fetch_sheet_records("Transport Logistics")
     
-    base_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
-    sheet_urls = {
-        "membership": f"{base_url}#gid=0",
-        "shareholding": f"{base_url}#gid=1943609077", 
-        "short_term": f"{base_url}#gid=1049826867",  
-        "long_term": f"{base_url}#gid=1767668779",   
-        "payment": f"{base_url}#gid=94456819",
-        "transport": f"{base_url}#gid=284019284"
-    }
-    
     return render_template(
         'weighbridge_tickets.html',
         texts=TEXTS[session['lang']],
         current_lang=session['lang'],
-        sheet_urls=sheet_urls,
         membership_tickets=membership_tickets,
         shareholding_tickets=shareholding_tickets,
         short_term_tickets=short_term_tickets,
         long_term_tickets=long_term_tickets,
         payment_tickets=payment_tickets,
         transport_tickets=transport_tickets,
-        members=membership_tickets,
         spreadsheet_id=SPREADSHEET_ID
     )
 
@@ -686,11 +665,9 @@ def credit_committee_action():
     }
     final_status = status_map.get(action, 'Pending')
 
-    # Log action to audit sheet
     audit_row = [date_today, app_id, member_name, final_status, approved_amount, reviewer, notes]
     append_to_sheet("Loan Committee Audit Log", audit_row)
 
-    # If approved, post to Short term Loans/Advances ledger
     if action in ['approve', 'override']:
         interest = f"{approved_amount * 0.10:.2f}"
         loan_row = [member_name, "N/A", "N/A", str(approved_amount), interest, date_today[:10], "12 Months", final_status]
