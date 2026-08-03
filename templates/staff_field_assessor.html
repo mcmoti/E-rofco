@@ -11,54 +11,64 @@
             <h1 class="text-2xl font-bold text-slate-900">Physical Farm Inspection & Geotag</h1>
         </div>
 
-        <form class="space-y-4">
+        {% if success_msg %}
+        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold">
+            {{ success_msg }}
+        </div>
+        {% endif %}
+
+        {% if pending_apps %}
+        <form method="POST" action="{{ url_for('field_assessor') if 'field_assessor' in endpoints else '/staff/field-assessor' }}" enctype="multipart/form-data" class="space-y-4">
+            
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Target Member Account</label>
-                <input type="text" value="MBR-8849 — Ogutu Nyo (Kibos Sector)" readonly
-                       class="w-full text-sm px-3.5 py-2.5 rounded-lg bg-slate-100 border border-slate-300 font-semibold text-slate-700">
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Target Member Application</label>
+                <select name="app_id" required class="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 bg-white">
+                    {% for app in pending_apps %}
+                        <option value="{{ app.id }}">{{ app.id }} — {{ app.member_name }} ({{ app.zone if app.zone else 'General Zone' }}, {{ app.acreage }} Acres)</option>
+                    {% endfor %}
+                </select>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Verified Acreage</label>
-                    <input type="number" step="0.1" placeholder="e.g. 3.5" required
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Estimated Yield (Tons/Acre)</label>
+                    <input type="number" name="tons_per_acre" step="1" value="35" required
                            class="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Crop Stage</label>
-                    <select class="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
-                        <option>Early Seedling (0-3 Months)</option>
-                        <option>Vegetative Growth (4-9 Months)</option>
-                        <option>Maturing / Harvest Ready (10-18 Months)</option>
-                        <option>Ratoon Crop Stage</option>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Crop Health Grade</label>
+                    <select name="crop_health" class="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
+                        <option value="Grade A - Excellent">Grade A — High Density Yield (>35 Tons/Acre)</option>
+                        <option value="Grade B - Good">Grade B — Average Yield (25-34 Tons/Acre)</option>
+                        <option value="Grade C - Moderate">Grade C — Below Average (<24 Tons/Acre)</option>
+                        <option value="Grade D - Poor">Grade D — High Pest / Drought Risk</option>
                     </select>
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Agronomist Stand Health Assessment</label>
-                <select class="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500">
-                    <option>Grade A — High Density Yield (>35 Tons/Acre)</option>
-                    <option>Grade B — Average Yield (25-34 Tons/Acre)</option>
-                    <option>Grade C — Below Average / Pest Risk (<24 Tons/Acre)</option>
-                </select>
-            </div>
-
-            <!-- GPS Geotagging Input -->
+            <!-- GPS Geotagging Inputs -->
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Parcel GPS Geotag Coordinates</label>
-                <div class="flex gap-2">
-                    <input type="text" id="geoCoords" placeholder="Latitude, Longitude" readonly
-                           class="w-full text-sm px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-600">
-                    <button type="button" onclick="captureGPS()" class="bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-slate-700 whitespace-nowrap">
-                        📍 Fetch GPS
-                    </button>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <input type="text" id="latitude" name="latitude" placeholder="Latitude (e.g. -0.091700)"
+                           class="text-sm px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-600">
+                    <input type="text" id="longitude" name="longitude" placeholder="Longitude (e.g. 34.768000)"
+                           class="text-sm px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-600">
                 </div>
+                <button type="button" onclick="captureGPS()" class="w-full bg-slate-800 text-white text-xs font-bold py-2 rounded-lg hover:bg-slate-700 transition-colors flex items-center justify-center gap-1">
+                    <span>📍</span> Fetch Device GPS Coordinates
+                </button>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Inspection Photo Attachment</label>
+                <input type="file" name="inspection_photo" accept="image/*"
+                       class="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50">
             </div>
 
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Inspection Notes & Risk Factors</label>
-                <textarea rows="3" placeholder="Note access road conditions, factory transport distance, weed control status..."
+                <textarea name="notes" rows="3" placeholder="Note road conditions, transport distance, crop weeds..."
                           class="w-full text-sm p-3.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"></textarea>
             </div>
 
@@ -66,6 +76,11 @@
                 Verify & Authorize Asset Value &rarr;
             </button>
         </form>
+        {% else %}
+        <div class="p-8 text-center text-slate-500 text-sm">
+            No applications pending field audit.
+        </div>
+        {% endif %}
 
     </div>
 </div>
@@ -74,9 +89,10 @@
 function captureGPS() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(position) {
-            document.getElementById('geoCoords').value = position.coords.latitude.toFixed(6) + ", " + position.coords.longitude.toFixed(6);
+            document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
         }, function() {
-            alert("Geolocation error or permission denied.");
+            alert("Geolocation permission denied or unretrievable.");
         });
     } else {
         alert("Geolocation is not supported by this browser.");

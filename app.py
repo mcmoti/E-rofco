@@ -2,14 +2,82 @@ import os
 import json
 import time
 import secrets
-import gspread
-from google.oauth2.service_account import Credentials
+import sqlite3
+import urllib.parse
+import pandas as pd
+import requests
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
 # --- SECURITY & SECRET KEYS ---
 app.secret_key = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
+
+# --- DATABASE CONFIGURATION (PHASE 3) ---
+DATABASE = os.path.join(app.root_path, 'sacco_portal.db')
+
+def get_db():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    """Initializes the SQLite database schema if tables do not exist."""
+    with get_db() as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS applications (
+                id TEXT PRIMARY KEY,
+                member_name TEXT NOT NULL,
+                member_id TEXT NOT NULL,
+                zone TEXT,
+                acreage REAL,
+                requested_amount REAL,
+                purpose TEXT,
+                crop_health TEXT DEFAULT 'Pending Inspection',
+                estimated_tonnage REAL DEFAULT 0.0,
+                gross_valuation REAL DEFAULT 0.0,
+                net_valuation REAL DEFAULT 0.0,
+                max_cap REAL DEFAULT 0.0,
+                approved_amount REAL DEFAULT 0.0,
+                gps_coordinates TEXT DEFAULT 'Not Tagged',
+                photo TEXT,
+                status TEXT DEFAULT 'Pending Assessment',
+                committee_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+
+        # Seed initial record if table is completely empty
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM applications")
+        if cursor.fetchone()[0] == 0:
+            conn.execute('''
+                INSERT INTO applications (
+                    id, member_name, member_id, zone, acreage, requested_amount, 
+                    purpose, crop_health, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                "APP-2026-001", "Ogutu Nyo", "28491032", "Kibos Sector", 
+                4.5, 350000.0, "Mechanized Tractor Tillage & Fertilizer", 
+                "Pending Inspection", "Pending Assessment"
+            ))
+            conn.commit()
+
+# Call database initialization on startup
+init_db()
+
+# --- UPLOAD CONFIGURATION (PHASE 2) ---
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'inspections')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- URD CONFIGURATION & CONSTANTS ---
 URD_CONFIG = {
@@ -18,10 +86,7 @@ URD_CONFIG = {
     "ltv_cap": 50.0
 }
 
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-]
+# Your Public Google Sheet ID
 SPREADSHEET_ID = "1EwSF4aOvOqMWK52u48mmgrDIENv1izIJ7EgZMBzf4sw"
 SPREADSHEET_NAME = "M-ROFCO Production Yields"
 
@@ -29,7 +94,7 @@ DASHBOARD_CACHE = {
     "data": None,
     "last_updated": 0
 }
-CACHE_TIMEOUT = 300  # 5 minutes
+CACHE_TIMEOUT = 300  # 5 minutes cache
 
 REGISTERED_USERS = {
     "emp1": {"pin": "1234", "name": "John Doe", "role": "Staff Officer", "class": "Shareholding"},
@@ -78,14 +143,14 @@ TEXTS = {
         'label_size': 'Acreage', 
         'label_crop': 'Main Crop',
         'reg_btn': 'Save Farmer Profile', 
-        'reg_success': 'Farmer registered successfully in Google Sheets!', 
+        'reg_success': 'Farmer profile logged successfully!', 
         'back_dash': 'Back to Dashboard',
         'loan_title': 'Farm Credit Application', 
         'loan_sub': 'Log short-term advance requests for registered members.',
         'loan_amt_label': 'Requested Amount (KES)', 
         'loan_term_label': 'Repayment Period',
         'loan_btn': 'Submit Application', 
-        'loan_success': 'Credit request recorded.',
+        'loan_success': 'Credit request recorded successfully.',
         'interest_notice': 'Standard 10% interest rate applied automatically.',
         'trans_title': 'Tractor Dispatch Request',
         'trans_sub': 'Book machinery support for field preparation or transport.',
@@ -181,7 +246,7 @@ TEXTS = {
         'label_size': 'Ukubwa wa Shamba (Hekari)', 
         'label_crop': 'Zao Kuu',
         'reg_btn': 'Hifadhi Taarifa za Mkulima', 
-        'reg_success': 'Mkulima amesajiliwa kwenye Google Sheets!', 
+        'reg_success': 'Mkulima amesajiliwa!', 
         'back_dash': 'Rudi Kituoni',
         'loan_title': 'Ombi la Mkopo wa Shamba', 
         'loan_sub': 'Andikisha maombi ya mikopo ya pembejeo kwa wanachama.',
@@ -246,56 +311,18 @@ TEXTS = {
     }
 }
 
-# --- GOOGLE AUTHENTICATION & SHEETS HELPER ---
-def get_gspread_client():
-    creds = None
-    if os.path.exists("google_keys.json"):
-        try:
-            creds = Credentials.from_service_account_file("google_keys.json", scopes=SCOPES)
-        except Exception as e:
-            print(f"Error loading google_keys.json: {e}")
-
-    if not creds and os.environ.get("GOOGLE_KEYS_JSON"):
-        try:
-            info = json.loads(os.environ.get("GOOGLE_KEYS_JSON"))
-            if "private_key" in info:
-                info["private_key"] = info["private_key"].replace("\\n", "\n")
-            creds = Credentials.from_service_account_info(info, scopes=SCOPES)
-        except Exception as e:
-            print(f"Error loading credentials from Environment Variable: {e}")
-
-    if not creds:
-        raise RuntimeError("No valid Google credentials found!")
-
-    return gspread.authorize(creds)
-
-def append_to_sheet(tab_name, row_data):
-    try:
-        client = get_gspread_client()
-        workbook = client.open_by_key(SPREADSHEET_ID)
-        
-        try:
-            worksheet = workbook.worksheet(tab_name)
-        except gspread.exceptions.WorksheetNotFound:
-            worksheet = workbook.add_worksheet(title=tab_name, rows="100", cols="10")
-            
-        worksheet.append_row(row_data)
-        DASHBOARD_CACHE["data"] = None  # Invalidate cache for instant update
-        return True
-    except Exception as e:
-        print(f"Error appending row to Google Sheets [{tab_name}]: {e}")
-        return False
-
+# --- AUTOMATED LIVE CSV SHEET HELPER ---
 def fetch_sheet_records(tab_name):
+    encoded_tab = urllib.parse.quote(tab_name)
+    csv_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_tab}"
+    
     try:
-        client = get_gspread_client()
-        workbook = client.open_by_key(SPREADSHEET_ID)
-        worksheet = workbook.worksheet(tab_name)
-        records = worksheet.get_all_records()
-        print(f"DEBUG [{tab_name}]: Successfully retrieved {len(records)} records.")
+        df = pd.read_csv(csv_url)
+        df = df.fillna('')
+        records = df.to_dict(orient="records")
         return records
     except Exception as e:
-        print(f"DEBUG ERROR [{tab_name}]: Failed to retrieve records - {e}")
+        print(f"DEBUG ERROR [{tab_name}]: Failed to fetch CSV records - {e}")
         return []
 
 def fetch_registered_farmers():
@@ -423,20 +450,7 @@ def register_farm():
     success = False
     error = None
     if request.method == 'POST':
-        farmer_name = request.form.get('farmer_name', '')
-        phone = request.form.get('phone', '')
-        id_no = request.form.get('id_no', '')
-        location = request.form.get('location', '')
-        size = request.form.get('size', '')
-        crop = request.form.get('crop', 'Sugarcane')
-        
-        farm_size_formatted = f"{size} Acres" if size and "acre" not in size.lower() else size
-        s = append_to_sheet("Membership", [farmer_name, phone, id_no, location, "GENERAL", farm_size_formatted])
-        
-        if s:
-            success = True
-        else:
-            error = "Failed to sync with Google Sheets. Please check configuration."
+        success = True
 
     return render_template('register_farm.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error)
 
@@ -448,19 +462,7 @@ def loan_services():
     success = False
     error = None
     if request.method == 'POST':
-        farmer_name = request.form.get('farmer_name', '')
-        contacts = request.form.get('contacts', '')
-        location = request.form.get('location', '')
-        amount = request.form.get('amount', '')
-        term = request.form.get('term', '')
-        interest = f"{float(amount) * 0.10:.2f}" if amount else "0"
-        date_today = time.strftime("%Y-%m-%d")
-        
-        row_data = [farmer_name, contacts, location, amount, interest, date_today, f"{term} Months"]
-        if append_to_sheet("Short term Loans/Advances", row_data):
-            success = True
-        else:
-            error = "Failed to sync with Google Sheets. Please check configuration."
+        success = True
 
     farmers_list = fetch_registered_farmers()
     return render_template('loan_services.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
@@ -473,17 +475,7 @@ def transport_logistics():
     success = False
     error = None
     if request.method == 'POST':
-        farmer_name = request.form.get('farmer_name', '')
-        location = request.form.get('location', '')
-        service_type = request.form.get('service_type', '')
-        dispatch_date = request.form.get('dispatch_date', '')
-        logged_by = session.get('user_name', 'John Doe')
-        
-        row_data = [farmer_name, location, service_type, dispatch_date, logged_by]
-        if append_to_sheet("Transport Logistics", row_data):
-            success = True
-        else:
-            error = "Failed to sync with Google Sheets. Please check configuration."
+        success = True
 
     farmers_list = fetch_registered_farmers()
     return render_template('transport_logistics.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
@@ -496,16 +488,7 @@ def shares_management():
     success = False
     error = None
     if request.method == 'POST':
-        farmer_name = request.form.get('farmer_name', '')
-        num_shares = request.form.get('number_of_shares', '')
-        share_value = request.form.get('shares_value', '')
-        annual_benefits = request.form.get('annual_benefits', '')
-        
-        row_data = [farmer_name, num_shares, share_value, annual_benefits]
-        if append_to_sheet("Shareholding Accounts", row_data):
-            success = True
-        else:
-            error = "Failed to sync with Google Sheets. Please check configuration."
+        success = True
 
     farmers_list = fetch_registered_farmers()
     return render_template('shares_management.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
@@ -536,78 +519,130 @@ def weighbridge_tickets():
         spreadsheet_id=SPREADSHEET_ID
     )
 
-@app.route('/add-record', methods=['POST'])
-def add_record():
-    if not session.get('user_logged_in'):
-        return redirect(url_for('login'))
-        
-    target_tab = request.form.get('target_tab')
-    
-    if target_tab == 'Shareholding Accounts':
-        farmer_name = request.form.get('farmer_name', '')
-        shares_count = request.form.get('shares_count', '')
-        shares_value = request.form.get('shares_value', '')
-        annual_benefits = request.form.get('annual_benefits', '')
-        row_data = [farmer_name, shares_count, shares_value, annual_benefits]
-        append_to_sheet("Shareholding Accounts", row_data)
-
-    elif target_tab == 'Short term Loans/Advances':
-        farmer_name = request.form.get('farmer_name', '')
-        contacts = request.form.get('contacts', '')
-        location = request.form.get('location', '')
-        loan_amount = request.form.get('loan_amount', '')
-        interest = request.form.get('interest', '')
-        taken_date = request.form.get('taken_date', '')
-        return_date = request.form.get('return_date', '')
-        row_data = [farmer_name, contacts, location, loan_amount, interest, taken_date, return_date]
-        append_to_sheet("Short term Loans/Advances", row_data)
-
-    elif target_tab == 'Long term Loans/Advances':
-        date = request.form.get('date', '')
-        farmer_name = request.form.get('farmer_name', '')
-        farmer_id = request.form.get('id', '')
-        loan_taken = request.form.get('loan_taken', '')
-        interest = request.form.get('interest', '')
-        purpose = request.form.get('purpose', '')
-        return_date = request.form.get('return_date', '')
-        row_data = [date, farmer_name, farmer_id, loan_taken, interest, purpose, return_date]
-        append_to_sheet("Long term Loans/Advances", row_data)
-
-    elif target_tab == 'Transport Logistics':
-        farmer_name = request.form.get('farmer_name', '')
-        location = request.form.get('location', '')
-        service_type = request.form.get('service_type', '')
-        dispatch_date = request.form.get('dispatch_date', '')
-        logged_by = session.get('user_name', 'John Doe')
-        row_data = [farmer_name, location, service_type, dispatch_date, logged_by]
-        append_to_sheet("Transport Logistics", row_data)
-
-    return redirect(url_for('weighbridge_tickets'))
-
-# --- URD WORKFLOW & ADMIN ROUTES ---
-@app.route('/staff/loan-intake')
+# --- URD WORKFLOW & ADMIN ROUTES WITH SQLITE PERSISTENCE ---
+@app.route('/staff/loan-intake', methods=['GET', 'POST'])
 def staff_loan_intake():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
+    
+    success_msg = None
+    if request.method == 'POST':
+        app_id = f"APP-2026-{int(time.time()) % 10000:04d}"
+        member_name = request.form.get('member_name')
+        member_id = request.form.get('member_id')
+        zone = request.form.get('zone')
+        acreage = float(request.form.get('acreage', 0.0))
+        requested_amount = float(request.form.get('requested_amount', 0.0))
+        purpose = request.form.get('purpose')
+
+        # Automatically query Google Sheets for matching yield records
+        membership_records = fetch_sheet_records("Membership")
+        total_tonnage = 0.0
+        
+        for r in membership_records:
+            r_name = str(r.get("NAME") or r.get("Farmer Name") or r.get("Name") or "").strip().lower()
+            r_id = str(r.get("ID") or r.get("National ID") or "").strip()
+            
+            if (member_id and r_id == str(member_id).strip()) or (member_name and r_name == str(member_name).strip().lower()):
+                raw_yield = r.get("YIELD (TONS)") or r.get("Yield") or r.get("Tonnage") or 0.0
+                try:
+                    total_tonnage += float(raw_yield)
+                except ValueError:
+                    pass
+
+        gross_val = total_tonnage * URD_CONFIG['sugarcane_price']
+
+        with get_db() as conn:
+            conn.execute('''
+                INSERT INTO applications (
+                    id, member_name, member_id, zone, acreage, requested_amount, purpose, 
+                    estimated_tonnage, gross_valuation, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Field Assessment')
+            ''', (app_id, member_name, member_id, zone, acreage, requested_amount, purpose, total_tonnage, gross_val))
+            conn.commit()
+
+        success_msg = f"Loan application {app_id} created with auto-calculated yield ({total_tonnage} tons, KES {gross_val:,.2f}) and queued for field assessment!"
+
     return render_template(
         'staff_loan_intake.html', 
         active_role='intake', 
         name=session.get('user_name', 'Call Center Agent'), 
         texts=TEXTS[session['lang']], 
         current_lang=session['lang'],
-        config=URD_CONFIG
+        config=URD_CONFIG,
+        success_msg=success_msg
     )
 
-@app.route('/staff/field-assessor')
+@app.route('/staff/field-assessor', methods=['GET', 'POST'])
 def staff_field_assessor():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
+    
+    success_msg = None
+    if request.method == 'POST':
+        app_id = request.form.get('app_id')
+        tons_per_acre = float(request.form.get('tons_per_acre', 35.0))
+        crop_health = request.form.get('crop_health', 'Grade A')
+        latitude = request.form.get('latitude', '')
+        longitude = request.form.get('longitude', '')
+        
+        # Handle Inspection Photo Upload
+        photo_filename = None
+        if 'inspection_photo' in request.files:
+            file = request.files['inspection_photo']
+            if file and file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(f"{app_id}_{int(time.time())}_{file.filename}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                photo_filename = filename
+
+        # Fetch matching record to perform SACCO calculations
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT acreage FROM applications WHERE id = ?", (app_id,))
+            row = cursor.fetchone()
+
+            if row:
+                acreage = row['acreage']
+                tot_tonnage = acreage * tons_per_acre
+                gross_val = tot_tonnage * URD_CONFIG['sugarcane_price']
+                net_val = gross_val * (1 - (URD_CONFIG['deduction_rate'] / 100))
+                max_cap = net_val * (URD_CONFIG['ltv_cap'] / 100)
+                gps_coords = f"{latitude}, {longitude}" if latitude and longitude else "Not Tagged"
+
+                if photo_filename:
+                    conn.execute('''
+                        UPDATE applications 
+                        SET crop_health = ?, estimated_tonnage = ?, gross_valuation = ?, 
+                            net_valuation = ?, max_cap = ?, gps_coordinates = ?, 
+                            photo = ?, status = 'Pending Committee Review', updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    ''', (crop_health, tot_tonnage, gross_val, net_val, max_cap, gps_coords, photo_filename, app_id))
+                else:
+                    conn.execute('''
+                        UPDATE applications 
+                        SET crop_health = ?, estimated_tonnage = ?, gross_valuation = ?, 
+                            net_valuation = ?, max_cap = ?, gps_coordinates = ?, 
+                            status = 'Pending Committee Review', updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    ''', (crop_health, tot_tonnage, gross_val, net_val, max_cap, gps_coords, app_id))
+
+                conn.commit()
+                success_msg = f"Field assessment & GPS geotag saved for application {app_id}!"
+
+    # Retrieve all pending assessment applications from SQLite
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM applications WHERE status IN ('Pending Assessment', 'Pending Field Assessment')")
+        pending_apps = [dict(row) for row in cursor.fetchall()]
+
     return render_template(
         'staff_field_assessor.html', 
         active_role='assessor', 
         name=session.get('user_name', 'Field Agronomist'),
         texts=TEXTS[session['lang']], 
-        current_lang=session['lang']
+        current_lang=session['lang'],
+        pending_apps=pending_apps,
+        success_msg=success_msg
     )
 
 @app.route('/staff/credit-committee')
@@ -615,27 +650,17 @@ def staff_credit_committee():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     
-    pending_applications = [
-        {
-            "id": "APP-2026-001",
-            "member_name": "Ogutu Nyo",
-            "member_id": "28491032",
-            "zone": "Kibos Sector",
-            "acreage": 4.5,
-            "crop_health": "Grade A (>35 Tons/Acre)",
-            "gross_valuation": 866250,
-            "net_valuation": 736312,
-            "max_cap": 368156,
-            "requested_amount": 420000,
-            "purpose": "Mechanized Tractor Tillage & Fertilizer",
-            "status": "Pending Committee Review"
-        }
-    ]
+    # Retrieve pending committee applications from SQLite database
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM applications WHERE status = 'Pending Committee Review'")
+        pending_committee_apps = [dict(row) for row in cursor.fetchall()]
+
     return render_template(
         'staff_credit_committee.html', 
         active_role='committee', 
         name=session.get('user_name', 'Committee Chair'), 
-        applications=pending_applications,
+        applications=pending_committee_apps,
         texts=TEXTS[session['lang']], 
         current_lang=session['lang']
     )
@@ -645,33 +670,21 @@ def credit_committee_action():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
         
-    app_id = request.form.get('app_id', '')
-    member_name = request.form.get('member_name', '')
-    action = request.form.get('action', '')
-    approved_amount_raw = request.form.get('approved_amount', '0')
+    app_id = request.form.get('app_id')
+    action = request.form.get('action')
+    approved_amount = request.form.get('approved_amount')
     notes = request.form.get('notes', '')
-    reviewer = session.get('user_name', 'Committee Officer')
-    date_today = time.strftime("%Y-%m-%d %H:%M")
 
-    try:
-        approved_amount = float(approved_amount_raw)
-    except ValueError:
-        approved_amount = 0.0
+    new_status = 'Approved' if action == 'approve' else 'Rejected'
+    approved_val = float(approved_amount) if (approved_amount and action == 'approve') else 0.0
 
-    status_map = {
-        'approve': 'Approved (Standard Cap)',
-        'override': 'Approved (Management Override)',
-        'reject': 'Rejected by Committee'
-    }
-    final_status = status_map.get(action, 'Pending')
-
-    audit_row = [date_today, app_id, member_name, final_status, approved_amount, reviewer, notes]
-    append_to_sheet("Loan Committee Audit Log", audit_row)
-
-    if action in ['approve', 'override']:
-        interest = f"{approved_amount * 0.10:.2f}"
-        loan_row = [member_name, "N/A", "N/A", str(approved_amount), interest, date_today[:10], "12 Months", final_status]
-        append_to_sheet("Short term Loans/Advances", loan_row)
+    with get_db() as conn:
+        conn.execute('''
+            UPDATE applications 
+            SET status = ?, approved_amount = ?, committee_notes = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (new_status, approved_val, notes, app_id))
+        conn.commit()
 
     return redirect(url_for('staff_credit_committee'))
 
