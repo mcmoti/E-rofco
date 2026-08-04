@@ -4,9 +4,11 @@ import time
 import secrets
 import sqlite3
 import urllib.parse
+import csv
+from io import StringIO
 import pandas as pd
 import requests
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -50,7 +52,6 @@ def init_db():
         ''')
         conn.commit()
 
-        # Seed initial record if table is completely empty
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM applications")
         if cursor.fetchone()[0] == 0:
@@ -66,7 +67,6 @@ def init_db():
             ))
             conn.commit()
 
-# Call database initialization on startup
 init_db()
 
 # --- UPLOAD CONFIGURATION (PHASE 2) ---
@@ -86,7 +86,6 @@ URD_CONFIG = {
     "ltv_cap": 50.0
 }
 
-# Your Public Google Sheet ID
 SPREADSHEET_ID = "1EwSF4aOvOqMWK52u48mmgrDIENv1izIJ7EgZMBzf4sw"
 SPREADSHEET_NAME = "M-ROFCO Production Yields"
 
@@ -535,7 +534,6 @@ def staff_loan_intake():
         requested_amount = float(request.form.get('requested_amount', 0.0))
         purpose = request.form.get('purpose')
 
-        # Automatically query Google Sheets for matching yield records
         membership_records = fetch_sheet_records("Membership")
         total_tonnage = 0.0
         
@@ -586,7 +584,6 @@ def staff_field_assessor():
         latitude = request.form.get('latitude', '')
         longitude = request.form.get('longitude', '')
         
-        # Handle Inspection Photo Upload
         photo_filename = None
         if 'inspection_photo' in request.files:
             file = request.files['inspection_photo']
@@ -595,7 +592,6 @@ def staff_field_assessor():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 photo_filename = filename
 
-        # Fetch matching record to perform SACCO calculations
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT acreage FROM applications WHERE id = ?", (app_id,))
@@ -629,7 +625,6 @@ def staff_field_assessor():
                 conn.commit()
                 success_msg = f"Field assessment & GPS geotag saved for application {app_id}!"
 
-    # Retrieve all pending assessment applications from SQLite
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM applications WHERE status IN ('Pending Assessment', 'Pending Field Assessment')")
@@ -650,7 +645,6 @@ def staff_credit_committee():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     
-    # Retrieve pending committee applications from SQLite database
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM applications WHERE status = 'Pending Committee Review'")
@@ -672,21 +666,72 @@ def credit_committee_action():
         
     app_id = request.form.get('app_id')
     action = request.form.get('action')
-    approved_amount = request.form.get('approved_amount')
     notes = request.form.get('notes', '')
 
-    new_status = 'Approved' if action == 'approve' else 'Rejected'
-    approved_val = float(approved_amount) if (approved_amount and action == 'approve') else 0.0
-
     with get_db() as conn:
-        conn.execute('''
-            UPDATE applications 
-            SET status = ?, approved_amount = ?, committee_notes = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        ''', (new_status, approved_val, notes, app_id))
-        conn.commit()
+        cursor = conn.cursor()
+        cursor.execute("SELECT requested_amount, max_cap FROM applications WHERE id = ?", (app_id,))
+        app_row = cursor.fetchone()
+
+        if app_row:
+            req_amt = app_row['requested_amount']
+            max_cap = app_row['max_cap']
+
+            if action == 'approve':
+                new_status = 'Approved'
+                approved_val = max_cap
+            elif action == 'override':
+                new_status = 'Approved (Override)'
+                approved_val = req_amt
+            else:
+                new_status = 'Rejected'
+                approved_val = 0.0
+
+            conn.execute('''
+                UPDATE applications 
+                SET status = ?, approved_amount = ?, committee_notes = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (new_status, approved_val, notes, app_id))
+            conn.commit()
 
     return redirect(url_for('staff_credit_committee'))
+
+# --- EXPORT ROUTE FOR EXCEL / CSV DOWNLOAD ---
+@app.route('/admin/export-applications-csv')
+def export_applications_csv():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM applications ORDER BY created_at DESC")
+        apps = cursor.fetchall()
+
+    si = StringIO()
+    writer = csv.writer(si)
+    
+    writer.writerow([
+        'Application ID', 'Member Name', 'Member ID', 'Zone', 'Acreage', 
+        'Requested Amount', 'Purpose', 'Crop Health', 'Estimated Tonnage', 
+        'Gross Valuation', 'Net Valuation', 'Max Loan Cap', 'Approved Amount', 
+        'GPS Coordinates', 'Status', 'Committee Notes', 'Created At', 'Updated At'
+    ])
+    
+    for app in apps:
+        writer.writerow([
+            app['id'], app['member_name'], app['member_id'], app['zone'], app['acreage'],
+            app['requested_amount'], app['purpose'], app['crop_health'], app['estimated_tonnage'],
+            app['gross_valuation'], app['net_valuation'], app['max_cap'], app['approved_amount'],
+            app['gps_coordinates'], app['status'], app['committee_notes'], app['created_at'], app['updated_at']
+        ])
+
+    output = si.getvalue()
+    
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=m_rofco_loan_applications.csv"}
+    )
 
 @app.route('/admin/config', methods=['GET', 'POST'])
 def admin_config():
