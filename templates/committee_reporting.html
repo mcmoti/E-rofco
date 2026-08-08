@@ -1,0 +1,61 @@
+{% extends layout_template %}
+
+{% block title %}Credit Committee Reporting Dashboard - M-ROFCO{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto my-6">
+    <div class="mb-6 flex items-center justify-between">
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Overview Header -->
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8 mb-8">
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Credit Committee Summarized Reporting</h2>
+        <p class="text-slate-500 text-sm">A digital dashboard providing top-level metrics on core operations and cooperative shareholding.</p>
+    </div>
+
+    <!-- Core Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Loans Metric -->
+        <div class="bg-white rounded-xl shadow-xs border border-emerald-100 p-6 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 text-xl mb-4">
+                💰
+            </div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Approved Loan Capital</h3>
+            <p class="text-3xl font-black text-slate-800">KES {{ "{:,.2f}".format(total_disbursed) }}</p>
+            <p class="text-xs text-emerald-600 font-semibold mt-2">{{ total_loans }} Total Disbursed Loans</p>
+        </div>
+
+        <!-- Shares Metric -->
+        <div class="bg-white rounded-xl shadow-xs border border-blue-100 p-6 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 text-xl mb-4">
+                📈
+            </div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Share Capital Growth</h3>
+            <p class="text-3xl font-black text-slate-800">KES {{ "{:,.2f}".format(total_shares_value) }}</p>
+            <p class="text-xs text-blue-600 font-semibold mt-2">{{ total_share_transactions }} Approved Transactions</p>
+        </div>
+
+        <!-- Transport Metric -->
+        <div class="bg-white rounded-xl shadow-xs border border-orange-100 p-6 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 text-xl mb-4">
+                🚜
+            </div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Transport & Logistics</h3>
+            <p class="text-3xl font-black text-slate-800">{{ total_transport_logs }}</p>
+            <p class="text-xs text-orange-600 font-semibold mt-2">Machinery Dispatches</p>
+        </div>
+    </div>
+    
+    <div class="flex flex-wrap gap-4 mt-8">
+        <a href="/admin/ledger" class="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors shadow-xs">
+            🏦 View Full Ledger
+        </a>
+        <a href="/admin/export-applications-csv" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-xs">
+            📥 Download Registry CSV
+        </a>
+    </div>
+</div>
+{% endblock %}

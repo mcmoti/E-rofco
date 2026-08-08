@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends layout_template %}
 
 {% block title %}Home - M-ROFCO Hub{% endblock %}
 
@@ -306,9 +306,31 @@
 
     <!-- 4. OPERATIONAL MODULES GRID -->
     <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            ⚡ Operational Modules
-        </h2>
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                ⚡ Operational Modules
+            </h2>
+            {% if session.get('user_role') == 'System Admin' %}
+            <div class="flex gap-2">
+                <a href="/admin/branches" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                    ⚙️ Branch Management
+                </a>
+                <a href="/admin/ledger" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                    🏦 System Ledger
+                </a>
+            </div>
+            {% endif %}
+            {% if session.get('user_role') == 'Committee Member' or session.get('user_role') == 'System Admin' %}
+            <div class="flex gap-2 mt-2 md:mt-0">
+                <a href="/committee/reporting" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                    📊 Committee Reporting
+                </a>
+                <a href="/committee/shares" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs">
+                    ⚖️ Share Approvals
+                </a>
+            </div>
+            {% endif %}
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <a href="/register-farm" class="bg-white border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col group">
                 <div class="w-13 h-13 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-colors">

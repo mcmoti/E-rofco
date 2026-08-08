@@ -1,6 +1,7 @@
 import os
 import json
 import time
+from datetime import datetime, timedelta
 import secrets
 import sqlite3
 import urllib.parse
@@ -13,153 +14,105 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from fpdf import FPDF
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 
 # --- SECURITY & SECRET KEYS ---
 app.secret_key = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
 
-# --- DATABASE CONFIGURATION (PHASE 3) ---
-DATABASE = os.path.join(app.root_path, 'sacco_portal.db')
+# --- DATABASE CONFIGURATION (PHASE 1) ---
+from config import Config
+from models import db, Branch, User, Application, PasswordChangeRequest, SystemFund, FundRequest, CreditReceipt, ShareTransaction
+
+app.config.from_object(Config)
+db.init_app(app)
+
+# --- DYNAMIC INTEREST CRON JOB ---
+def calculate_overdue_interest():
+    """Background task to apply flat-fee interest on overdue short-term advances."""
+    with app.app_context():
+        overdue_apps = Application.query.filter(
+            Application.status == 'Approved',
+            Application.loan_type == 'Short-Term',
+            Application.expected_return_date < datetime.utcnow()
+        ).all()
+        
+        for app_record in overdue_apps:
+            # For simplicity, if interest_applied is 0, we apply the flat fee ONCE when it becomes overdue.
+            if app_record.interest_applied == 0:
+                fee = 500.0 # flat fee penalty
+                app_record.interest_applied = fee
+                app_record.approved_amount += fee # Adjust the required payback amount
+                
+                print(f"Applied KES {fee} flat fee penalty to Overdue Application {app_record.id}")
+                
+        db.session.commit()
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=calculate_overdue_interest, trigger="interval", minutes=60) # Runs every hour
+scheduler.start()
+
+# Stop scheduler when exiting
+import atexit
+atexit.register(lambda: scheduler.shutdown())
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
+    # Temporary shim for gradual migration
+    conn = sqlite3.connect(app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))
     conn.row_factory = sqlite3.Row
     return conn
 
+@app.context_processor
+def inject_layout():
+    role = session.get('user_role')
+    if role == 'Intake Agent':
+        return {'layout_template': 'base_intake.html'}
+    elif role == 'Committee Member':
+        return {'layout_template': 'base_committee.html'}
+    elif role == 'Field Assessor':
+        return {'layout_template': 'base_assessor.html'}
+    elif role == 'System Admin':
+        return {'layout_template': 'base_admin.html'}
+    return {'layout_template': 'base_intake.html'} # Fallback
+
 def init_db():
-    """Initializes the SQLite database schema if tables do not exist."""
-    with get_db() as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS applications (
-                id TEXT PRIMARY KEY,
-                member_name TEXT NOT NULL,
-                member_id TEXT NOT NULL,
-                zone TEXT,
-                acreage REAL,
-                requested_amount REAL,
-                purpose TEXT,
-                crop_health TEXT DEFAULT 'Pending Inspection',
-                estimated_tonnage REAL DEFAULT 0.0,
-                gross_valuation REAL DEFAULT 0.0,
-                net_valuation REAL DEFAULT 0.0,
-                max_cap REAL DEFAULT 0.0,
-                approved_amount REAL DEFAULT 0.0,
-                gps_coordinates TEXT DEFAULT 'Not Tagged',
-                photo TEXT,
-                status TEXT DEFAULT 'Pending Assessment',
-                committee_notes TEXT,
-                guarantor_name TEXT,
-                guarantor_id TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+    """Initializes the database schema using SQLAlchemy."""
+    with app.app_context():
+        db.create_all()
         
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS staff_users (
-                username TEXT PRIMARY KEY,
-                pin TEXT,
-                password_hash TEXT,
-                name TEXT NOT NULL,
-                role TEXT NOT NULL
-            )
-        ''')
-        
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS password_change_requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                new_password_hash TEXT NOT NULL,
-                status TEXT DEFAULT 'Pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS system_funds (
-                id INTEGER PRIMARY KEY,
-                available_balance REAL DEFAULT 0.0,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS fund_requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                requested_by TEXT NOT NULL,
-                amount REAL NOT NULL,
-                status TEXT DEFAULT 'Pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS credit_receipts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                app_id TEXT NOT NULL,
-                member_name TEXT,
-                action TEXT,
-                approved_amount REAL,
-                committee_notes TEXT,
-                processed_by TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        conn.commit()
-
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM applications")
-        if cursor.fetchone()[0] == 0:
-            conn.execute('''
-                INSERT INTO applications (
-                    id, member_name, member_id, zone, acreage, requested_amount, 
-                    purpose, crop_health, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                "APP-2026-001", "Ogutu Nyo", "28491032", "Kibos Sector", 
-                4.5, 350000.0, "Mechanized Tractor Tillage & Fertilizer", 
-                "Pending Inspection", "Pending Assessment"
-            ))
-            conn.commit()
-
-        # Try to alter table if columns don't exist
-        try:
-            conn.execute("ALTER TABLE applications ADD COLUMN guarantor_name TEXT")
-            conn.execute("ALTER TABLE applications ADD COLUMN guarantor_id TEXT")
-        except sqlite3.OperationalError:
-            pass
+        # Seed default fund
+        if not SystemFund.query.first():
+            db.session.add(SystemFund(id=1, available_balance=0.0))
+            db.session.commit()
             
-        try:
-            conn.execute("ALTER TABLE applications ADD COLUMN loan_type TEXT DEFAULT 'Long-Term'")
-        except sqlite3.OperationalError:
-            pass
-            
-            
-        try:
-            conn.execute("ALTER TABLE staff_users ADD COLUMN password_hash TEXT")
+        # Seed default users
+        if not User.query.first():
             default_pw = generate_password_hash('Mrofco2026')
-            conn.execute("UPDATE staff_users SET password_hash = ?", (default_pw,))
-        except sqlite3.OperationalError:
-            pass
-
-        cursor.execute("SELECT COUNT(*) FROM staff_users")
-        if cursor.fetchone()[0] == 0:
-            default_pw = generate_password_hash('Mrofco2026')
-            conn.executemany('''
-                INSERT INTO staff_users (username, pin, password_hash, name, role) VALUES (?, ?, ?, ?, ?)
-            ''', [
-                ('intake1', '1000', default_pw, 'Alice (Intake)', 'Intake Agent'),
-                ('assessor1', '2000', default_pw, 'Bob (Assessor)', 'Field Assessor'),
-                ('committee1', '3000', default_pw, 'Charlie (Committee)', 'Committee Member'),
-                ('admin1', '4000', default_pw, 'Dave (Admin)', 'System Admin')
-            ])
-            conn.commit()
+            users = [
+                User(username='intake1', pin='1000', password_hash=default_pw, name='Alice (Intake)', role='Intake Agent'),
+                User(username='assessor1', pin='2000', password_hash=default_pw, name='Bob (Assessor)', role='Field Assessor'),
+                User(username='committee1', pin='3000', password_hash=default_pw, name='Charlie (Committee)', role='Committee Member'),
+                User(username='admin1', pin='4000', password_hash=default_pw, name='System Admin', role='System Admin')
+            ]
+            db.session.add_all(users)
+            db.session.commit()
             
-        cursor.execute("SELECT COUNT(*) FROM system_funds")
-        if cursor.fetchone()[0] == 0:
-            conn.execute("INSERT INTO system_funds (id, available_balance) VALUES (1, 0.0)")
-            conn.commit()
+        # Seed default application
+        if not Application.query.first():
+            app1 = Application(
+                id="APP-2026-001",
+                member_name="Ogutu Nyo",
+                member_id="28491032",
+                zone="Kibos Sector",
+                acreage=4.5,
+                requested_amount=350000.0,
+                purpose="Mechanized Tractor Tillage & Fertilizer",
+                crop_health="Pending Inspection",
+                status="Pending Assessment"
+            )
+            db.session.add(app1)
+            db.session.commit()
 
 init_db()
 
@@ -451,7 +404,7 @@ def role_required(*roles):
         def decorated_function(*args, **kwargs):
             if not session.get('user_logged_in'):
                 return redirect(url_for('login'))
-            if session.get('user_role') not in roles and 'System Admin' not in roles:
+            if session.get('user_role') not in roles:
                 return redirect(url_for('home'))
             return f(*args, **kwargs)
         return decorated_function
@@ -480,20 +433,35 @@ def login():
         
     error = None
     if request.method == 'POST':
+        role_selected = request.form.get('role', '')
         username = request.form.get('username', '')
         password = request.form.get('password', '')
         
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM staff_users WHERE username = ?", (username,))
-            authenticated_user = cursor.fetchone()
+        user = User.query.get(username)
                 
-        if authenticated_user and check_password_hash(authenticated_user['password_hash'], password):
-            session['user_logged_in'] = True
-            session['user_username'] = authenticated_user['username']
-            session['user_name'] = authenticated_user['name']
-            session['user_role'] = authenticated_user['role']
-            return redirect(url_for('home'))
+        if user and check_password_hash(user.password_hash, password):
+            if user.role != role_selected:
+                error = f"Invalid role selected for this username. You are a {user.role}."
+            else:
+                session['user_logged_in'] = True
+                session['user_username'] = user.username
+                session['user_name'] = user.name
+                session['user_role'] = user.role
+                session['branch_id'] = user.branch_id
+                role = user.role
+                
+                if role == 'Intake Agent':
+                    return redirect(url_for('staff_loan_intake'))
+                elif role == 'Field Assessor':
+                    return redirect(url_for('staff_field_assessor'))
+                elif role == 'Office Staff':
+                    return redirect(url_for('home'))
+                elif role == 'Committee Member':
+                    return redirect(url_for('staff_credit_committee'))
+                elif role == 'System Admin':
+                    return redirect(url_for('admin_branches'))
+                else:
+                    return redirect(url_for('login'))
         else:
             error = "Invalid username or password. Please try again."
             
@@ -543,6 +511,7 @@ def about():
     return render_template('about_us.html', texts=TEXTS[session['lang']], current_lang=session['lang'])
 
 @app.route('/register-farm', methods=['GET', 'POST'])
+@role_required('Intake Agent', 'System Admin')
 def register_farm():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -555,6 +524,7 @@ def register_farm():
     return render_template('register_farm.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error)
 
 @app.route('/loan-services', methods=['GET', 'POST'])
+@role_required('Intake Agent', 'System Admin')
 def loan_services():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -570,20 +540,43 @@ def loan_services():
         term = request.form.get('term')
         term_unit = request.form.get('term_unit', 'Months')
         
-        with get_db() as conn:
-            conn.execute('''
-                INSERT INTO applications (
-                    id, member_name, member_id, zone, acreage, requested_amount, purpose, 
-                    estimated_tonnage, gross_valuation, net_valuation, max_cap, status, committee_notes, loan_type
-                ) VALUES (?, ?, ?, ?, 0.0, ?, 'Input Micro-Loan', 0.0, 0.0, 0.0, ?, 'Pending Committee Review', ?, 'Short-Term')
-            ''', (app_id, farmer_name, contacts, location, amount, amount, f"Term: {term} {term_unit}"))
-            conn.commit()
+        expected_return_date = None
+        try:
+            term_int = int(term)
+            if term_unit == 'Months':
+                expected_return_date = datetime.utcnow() + timedelta(days=term_int * 30)
+            elif term_unit == 'Days':
+                expected_return_date = datetime.utcnow() + timedelta(days=term_int)
+            elif term_unit == 'Years':
+                expected_return_date = datetime.utcnow() + timedelta(days=term_int * 365)
+        except (ValueError, TypeError):
+            pass
+
+        branch_id = session.get('branch_id')
+        
+        new_app = Application(
+            id=app_id,
+            member_name=farmer_name,
+            member_id=contacts,
+            zone=location,
+            requested_amount=amount,
+            purpose='Input Micro-Loan',
+            max_cap=amount,
+            status='Pending Committee Review',
+            committee_notes=f"Term: {term} {term_unit}",
+            loan_type='Short-Term',
+            expected_return_date=expected_return_date,
+            branch_id=branch_id
+        )
+        db.session.add(new_app)
+        db.session.commit()
         success = True
 
     farmers_list = fetch_registered_farmers()
     return render_template('loan_services.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
 
 @app.route('/transport-logistics', methods=['GET', 'POST'])
+@role_required('Intake Agent', 'Committee Member', 'System Admin')
 def transport_logistics():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -616,6 +609,7 @@ def download_weighbridge_pdf():
     return send_file(pdf_path, as_attachment=True, download_name="Weighbridge_Report.pdf")
 
 @app.route('/shares-management', methods=['GET', 'POST'])
+@role_required('Intake Agent', 'System Admin')
 def shares_management():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -623,10 +617,46 @@ def shares_management():
     success = False
     error = None
     if request.method == 'POST':
+        farmer_name = request.form.get('farmer_name')
+        number_of_shares = int(request.form.get('number_of_shares', 0))
+        shares_value = float(request.form.get('shares_value', 0))
+        
+        transaction = ShareTransaction(
+            farmer_name=farmer_name,
+            transaction_type='Purchase',
+            number_of_shares=number_of_shares,
+            total_value=shares_value,
+            status='Pending',
+            initiated_by=session.get('user_username')
+        )
+        db.session.add(transaction)
+        db.session.commit()
         success = True
 
     farmers_list = fetch_registered_farmers()
     return render_template('shares_management.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
+
+@app.route('/committee/shares', methods=['GET', 'POST'])
+@role_required('Committee Member', 'System Admin')
+def committee_shares():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    if request.method == 'POST':
+        txn_id = request.form.get('txn_id')
+        action = request.form.get('action')
+        
+        txn = ShareTransaction.query.get(txn_id)
+        if txn:
+            if action == 'approve':
+                txn.status = 'Approved'
+            elif action == 'reject':
+                txn.status = 'Rejected'
+            db.session.commit()
+        return redirect(url_for('committee_shares'))
+        
+    pending_shares = ShareTransaction.query.filter_by(status='Pending').all()
+    return render_template('committee_shares.html', texts=TEXTS[session['lang']], current_lang=session['lang'], shares=pending_shares)
 
 @app.route('/weighbridge-tickets')
 @app.route('/production-yields')
@@ -691,14 +721,26 @@ def staff_loan_intake():
 
         gross_val = total_tonnage * URD_CONFIG['sugarcane_price']
 
-        with get_db() as conn:
-            conn.execute('''
-                INSERT INTO applications (
-                    id, member_name, member_id, zone, acreage, requested_amount, purpose, 
-                    estimated_tonnage, gross_valuation, status, guarantor_name, guarantor_id, loan_type, committee_notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Field Assessment', ?, ?, 'Long-Term', ?)
-            ''', (app_id, member_name, member_id, zone, acreage, requested_amount, purpose, total_tonnage, gross_val, guarantor_name, guarantor_id, f"Requested Term: {term} {term_unit}"))
-            conn.commit()
+        branch_id = session.get('branch_id')
+        new_app = Application(
+            id=app_id,
+            member_name=member_name,
+            member_id=member_id,
+            zone=zone,
+            acreage=acreage,
+            requested_amount=requested_amount,
+            purpose=purpose,
+            estimated_tonnage=total_tonnage,
+            gross_valuation=gross_val,
+            status='Pending Field Assessment',
+            guarantor_name=guarantor_name,
+            guarantor_id=guarantor_id,
+            loan_type='Long-Term',
+            committee_notes=f"Requested Term: {term} {term_unit}",
+            branch_id=branch_id
+        )
+        db.session.add(new_app)
+        db.session.commit()
 
         success_msg = f"Loan application {app_id} created with auto-calculated yield ({total_tonnage} tons, KES {gross_val:,.2f}) and queued for field assessment!"
 
@@ -734,43 +776,39 @@ def staff_field_assessor():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 photo_filename = filename
 
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT acreage FROM applications WHERE id = ?", (app_id,))
-            row = cursor.fetchone()
-
-            if row:
-                acreage = row['acreage']
-                tot_tonnage = acreage * tons_per_acre
+        app_record = Application.query.get(app_id)
+        if app_record:
+            # Enforce silo: only update if it matches assessor's branch or assessor has no branch
+            assessor_branch = session.get('branch_id')
+            if not assessor_branch or app_record.branch_id == assessor_branch:
+                tot_tonnage = app_record.acreage * tons_per_acre
                 gross_val = tot_tonnage * URD_CONFIG['sugarcane_price']
                 net_val = gross_val * (1 - (URD_CONFIG['deduction_rate'] / 100))
                 max_cap = net_val * (URD_CONFIG['ltv_cap'] / 100)
                 gps_coords = f"{latitude}, {longitude}" if latitude and longitude else "Not Tagged"
 
+                app_record.crop_health = crop_health
+                app_record.estimated_tonnage = tot_tonnage
+                app_record.gross_valuation = gross_val
+                app_record.net_valuation = net_val
+                app_record.max_cap = max_cap
+                app_record.gps_coordinates = gps_coords
+                app_record.status = 'Pending Committee Review'
+                
                 if photo_filename:
-                    conn.execute('''
-                        UPDATE applications 
-                        SET crop_health = ?, estimated_tonnage = ?, gross_valuation = ?, 
-                            net_valuation = ?, max_cap = ?, gps_coordinates = ?, 
-                            photo = ?, status = 'Pending Committee Review', updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
-                    ''', (crop_health, tot_tonnage, gross_val, net_val, max_cap, gps_coords, photo_filename, app_id))
-                else:
-                    conn.execute('''
-                        UPDATE applications 
-                        SET crop_health = ?, estimated_tonnage = ?, gross_valuation = ?, 
-                            net_valuation = ?, max_cap = ?, gps_coordinates = ?, 
-                            status = 'Pending Committee Review', updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
-                    ''', (crop_health, tot_tonnage, gross_val, net_val, max_cap, gps_coords, app_id))
-
-                conn.commit()
+                    app_record.photo = photo_filename
+                    
+                db.session.commit()
                 success_msg = f"Field assessment & GPS geotag saved for application {app_id}!"
+            else:
+                success_msg = "Error: Application does not belong to your branch."
 
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM applications WHERE status IN ('Pending Assessment', 'Pending Field Assessment')")
-        pending_apps = [dict(row) for row in cursor.fetchall()]
+    assessor_branch = session.get('branch_id')
+    query = Application.query.filter(Application.status.in_(['Pending Assessment', 'Pending Field Assessment']))
+    if assessor_branch:
+        query = query.filter_by(branch_id=assessor_branch)
+    
+    pending_apps = query.all()
 
     return render_template(
         'staff_field_assessor.html', 
@@ -788,14 +826,10 @@ def staff_credit_committee():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM applications WHERE status = 'Pending Committee Review'")
-        pending_committee_apps = [dict(row) for row in cursor.fetchall()]
-        
-        cursor.execute("SELECT available_balance FROM system_funds WHERE id = 1")
-        row = cursor.fetchone()
-        available_balance = row['available_balance'] if row else 0.0
+    pending_committee_apps = Application.query.filter_by(status='Pending Committee Review').all()
+    
+    system_fund = SystemFund.query.get(1)
+    available_balance = system_fund.available_balance if system_fund else 0.0
 
     error_msg = request.args.get('error')
     receipt_app_id = request.args.get('receipt_app_id')
@@ -822,49 +856,49 @@ def credit_committee_action():
     action = request.form.get('action')
     notes = request.form.get('notes', '')
 
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT requested_amount, max_cap, member_name FROM applications WHERE id = ?", (app_id,))
-        app_row = cursor.fetchone()
+    if action == 'override' and not notes.strip():
+        return redirect(url_for('staff_credit_committee', error="Override requires a justification comment in the notes field."))
+
+    app_record = Application.query.get(app_id)
+    system_fund = SystemFund.query.get(1)
+    available_balance = system_fund.available_balance if system_fund else 0.0
+
+    if app_record:
+        req_amt = app_record.requested_amount
+        max_cap = app_record.max_cap
+
+        if action == 'approve':
+            new_status = 'Approved'
+            approved_val = max_cap
+        elif action == 'override':
+            new_status = 'Approved (Override)'
+            approved_val = req_amt
+        else:
+            new_status = 'Rejected'
+            approved_val = 0.0
+            
+        if action in ['approve', 'override']:
+            if approved_val > available_balance:
+                return redirect(url_for('staff_credit_committee', error="Insufficient floating cash to approve this loan."))
+            system_fund.available_balance -= approved_val
+
+        app_record.status = new_status
+        app_record.approved_amount = approved_val
+        app_record.committee_notes = notes
         
-        cursor.execute("SELECT available_balance FROM system_funds WHERE id = 1")
-        row = cursor.fetchone()
-        available_balance = row['available_balance'] if row else 0.0
+        # Generate receipt record
+        receipt = CreditReceipt(
+            app_id=app_id,
+            member_name=app_record.member_name,
+            action=action.upper(),
+            approved_amount=approved_val,
+            committee_notes=notes,
+            processed_by=session.get('user_username')
+        )
+        db.session.add(receipt)
+        db.session.commit()
 
-        if app_row:
-            req_amt = app_row['requested_amount']
-            max_cap = app_row['max_cap']
-
-            if action == 'approve':
-                new_status = 'Approved'
-                approved_val = max_cap
-            elif action == 'override':
-                new_status = 'Approved (Override)'
-                approved_val = req_amt
-            else:
-                new_status = 'Rejected'
-                approved_val = 0.0
-                
-            if action in ['approve', 'override']:
-                if approved_val > available_balance:
-                    return redirect(url_for('staff_credit_committee', error="Insufficient funds to approve this loan."))
-                conn.execute("UPDATE system_funds SET available_balance = available_balance - ? WHERE id = 1", (approved_val,))
-
-            conn.execute('''
-                UPDATE applications 
-                SET status = ?, approved_amount = ?, committee_notes = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            ''', (new_status, approved_val, notes, app_id))
-            
-            # Generate receipt record
-            conn.execute('''
-                INSERT INTO credit_receipts (app_id, member_name, action, approved_amount, committee_notes, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (app_id, app_row['member_name'], action.upper(), approved_val, notes, session.get('user_username')))
-            
-            conn.commit()
-
-        return redirect(url_for('staff_credit_committee', success_msg=f"Application {app_id} processed successfully.", receipt_app_id=app_id))
+    return redirect(url_for('staff_credit_committee', success_msg=f"Application {app_id} processed successfully.", receipt_app_id=app_id))
 
 @app.route('/committee/download-receipt/<app_id>')
 @role_required('Committee Member', 'System Admin')
@@ -872,10 +906,7 @@ def download_receipt(app_id):
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
         
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM credit_receipts WHERE app_id = ? ORDER BY id DESC LIMIT 1", (app_id,))
-        receipt = cursor.fetchone()
+    receipt = CreditReceipt.query.filter_by(app_id=app_id).order_by(CreditReceipt.id.desc()).first()
         
     if not receipt:
         return "Receipt not found", 404
@@ -889,24 +920,56 @@ def download_receipt(app_id):
     pdf.ln(10)
     
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Receipt ID: REC-{receipt['id']:04d}", ln=True)
-    pdf.cell(200, 10, txt=f"Application ID: {receipt['app_id']}", ln=True)
-    pdf.cell(200, 10, txt=f"Member Name: {receipt['member_name']}", ln=True)
-    pdf.cell(200, 10, txt=f"Action Taken: {receipt['action']}", ln=True)
-    pdf.cell(200, 10, txt=f"Approved Amount: KES {receipt['approved_amount']:,.2f}", ln=True)
-    pdf.cell(200, 10, txt=f"Processed By: {receipt['processed_by']}", ln=True)
-    pdf.cell(200, 10, txt=f"Date: {receipt['created_at']}", ln=True)
+    pdf.cell(200, 10, txt=f"Receipt ID: REC-{receipt.id:04d}", ln=True)
+    pdf.cell(200, 10, txt=f"Application ID: {receipt.app_id}", ln=True)
+    pdf.cell(200, 10, txt=f"Member Name: {receipt.member_name}", ln=True)
+    pdf.cell(200, 10, txt=f"Action Taken: {receipt.action}", ln=True)
+    pdf.cell(200, 10, txt=f"Approved Amount: KES {receipt.approved_amount:,.2f}", ln=True)
+    pdf.cell(200, 10, txt=f"Processed By: {receipt.processed_by}", ln=True)
+    pdf.cell(200, 10, txt=f"Date: {receipt.created_at}", ln=True)
     pdf.ln(10)
     
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(200, 10, txt="Committee Notes/Justification:", ln=True)
     pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, txt=str(receipt['committee_notes']))
+    pdf.multi_cell(0, 10, txt=str(receipt.committee_notes))
     
     pdf_path = os.path.join(app.root_path, 'static', f'receipt_{app_id}.pdf')
     pdf.output(pdf_path)
     
     return send_file(pdf_path, as_attachment=True)
+
+@app.route('/committee/reporting')
+@role_required('Committee Member', 'System Admin')
+def committee_reporting():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    approved_loans = Application.query.filter(Application.status.like('Approved%')).all()
+    total_loans = len(approved_loans)
+    total_disbursed = sum(l.approved_amount for l in approved_loans)
+    
+    approved_shares = ShareTransaction.query.filter_by(status='Approved').all()
+    total_share_transactions = len(approved_shares)
+    total_shares_value = sum(s.total_value for s in approved_shares)
+    
+    # Just a mock metric for transport for now
+    total_transport_logs = 0
+    try:
+        total_transport_logs = len(fetch_sheet_records("Transport Logistics"))
+    except:
+        pass
+
+    return render_template(
+        'committee_reporting.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        total_loans=total_loans,
+        total_disbursed=total_disbursed,
+        total_share_transactions=total_share_transactions,
+        total_shares_value=total_shares_value,
+        total_transport_logs=total_transport_logs
+    )
 
 @app.route('/staff/request-password-change', methods=['GET', 'POST'])
 def request_password_change():
@@ -981,28 +1044,64 @@ def create_staff():
         username = request.form.get('username')
         name = request.form.get('name')
         role = request.form.get('role')
+        branch_id = request.form.get('branch_id')
         
+        if branch_id == '':
+            branch_id = None
+        elif branch_id:
+            branch_id = int(branch_id)
+            
         if role == 'System Admin' and session.get('user_role') != 'System Admin':
             error_msg = "Only System Admins can create new System Admin accounts."
         else:
             default_pw = generate_password_hash('Mrofco2026')
-            try:
-                with get_db() as conn:
-                    conn.execute('''
-                        INSERT INTO staff_users (username, password_hash, name, role) 
-                        VALUES (?, ?, ?, ?)
-                    ''', (username, default_pw, name, role))
-                    conn.commit()
-                success_msg = f"Staff account '{username}' created successfully with default password 'Mrofco2026'."
-            except sqlite3.IntegrityError:
+            existing_user = User.query.get(username)
+            if existing_user:
                 error_msg = "Username already exists."
+            else:
+                new_user = User(username=username, password_hash=default_pw, name=name, role=role, branch_id=branch_id)
+                db.session.add(new_user)
+                db.session.commit()
+                success_msg = f"Staff account '{username}' created successfully with default password 'Mrofco2026'."
 
+    branches = Branch.query.all()
     return render_template(
         'create_staff.html', 
         texts=TEXTS[session['lang']], 
         current_lang=session['lang'],
         success_msg=success_msg,
-        error_msg=error_msg
+        error_msg=error_msg,
+        branches=branches
+    )
+
+@app.route('/admin/branches', methods=['GET', 'POST'])
+@role_required('System Admin')
+def admin_branches():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    success_msg = None
+    error_msg = None
+    if request.method == 'POST':
+        name = request.form.get('name')
+        location = request.form.get('location')
+        
+        if Branch.query.filter_by(name=name).first():
+            error_msg = "Branch name already exists."
+        else:
+            new_branch = Branch(name=name, location=location)
+            db.session.add(new_branch)
+            db.session.commit()
+            success_msg = f"Branch '{name}' created successfully."
+
+    branches = Branch.query.all()
+    return render_template(
+        'admin_branches.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        success_msg=success_msg,
+        error_msg=error_msg,
+        branches=branches
     )
 
 @app.route('/committee/fund-requests', methods=['GET', 'POST'])
@@ -1047,25 +1146,21 @@ def admin_approve_funds():
         req_id = request.form.get('request_id')
         action = request.form.get('action')
         
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM fund_requests WHERE id = ?", (req_id,))
-            req = cursor.fetchone()
-            
-            if req and action == 'approve':
-                conn.execute("UPDATE system_funds SET available_balance = available_balance + ? WHERE id = 1", (req['amount'],))
-                conn.execute("UPDATE fund_requests SET status = 'Approved' WHERE id = ?", (req_id,))
-            elif req and action == 'reject':
-                conn.execute("UPDATE fund_requests SET status = 'Rejected' WHERE id = ?", (req_id,))
+        req = FundRequest.query.get(req_id)
+        if req:
+            if action == 'approve':
+                system_fund = SystemFund.query.get(1)
+                if system_fund:
+                    system_fund.available_balance += req.amount
+                req.status = 'Approved'
+            elif action == 'reject':
+                req.status = 'Rejected'
                 
-            conn.commit()
+            db.session.commit()
             
         return redirect(url_for('admin_approve_funds'))
 
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM fund_requests WHERE status = 'Pending'")
-        requests = cursor.fetchall()
+    requests = FundRequest.query.filter_by(status='Pending').all()
         
     return render_template(
         'admin_approve_funds.html', 
@@ -1075,16 +1170,37 @@ def admin_approve_funds():
     )
 
 # --- EXPORT ROUTE FOR EXCEL / CSV DOWNLOAD ---
+@app.route('/admin/ledger')
+@role_required('System Admin')
+def admin_ledger():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    system_fund = SystemFund.query.get(1)
+    available_balance = system_fund.available_balance if system_fund else 0.0
+    
+    # Get all approved applications for the ledger
+    approved_loans = Application.query.filter(Application.status.like('Approved%')).order_by(Application.updated_at.desc()).all()
+    
+    # Calculate total dispersed
+    total_dispersed = sum(app.approved_amount for app in approved_loans)
+    
+    return render_template(
+        'admin_ledger.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        available_balance=available_balance,
+        total_dispersed=total_dispersed,
+        loans=approved_loans
+    )
+
 @app.route('/admin/export-applications-csv')
 @role_required('System Admin', 'Committee Member')
 def export_applications_csv():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
 
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM applications ORDER BY created_at DESC")
-        apps = cursor.fetchall()
+    apps = Application.query.order_by(Application.created_at.desc()).all()
 
     si = StringIO()
     writer = csv.writer(si)
@@ -1096,12 +1212,12 @@ def export_applications_csv():
         'GPS Coordinates', 'Status', 'Committee Notes', 'Created At', 'Updated At'
     ])
     
-    for app in apps:
+    for app_record in apps:
         writer.writerow([
-            app['id'], app['member_name'], app['member_id'], app['zone'], app['acreage'],
-            app['requested_amount'], app['purpose'], app['crop_health'], app['estimated_tonnage'],
-            app['gross_valuation'], app['net_valuation'], app['max_cap'], app['approved_amount'],
-            app['gps_coordinates'], app['status'], app['committee_notes'], app['created_at'], app['updated_at']
+            app_record.id, app_record.member_name, app_record.member_id, app_record.zone, app_record.acreage,
+            app_record.requested_amount, app_record.purpose, app_record.crop_health, app_record.estimated_tonnage,
+            app_record.gross_valuation, app_record.net_valuation, app_record.max_cap, app_record.approved_amount,
+            app_record.gps_coordinates, app_record.status, app_record.committee_notes, app_record.created_at, app_record.updated_at
         ])
 
     output = si.getvalue()

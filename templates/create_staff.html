@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends layout_template %}
 
 {% block title %}Create Staff Account - M-ROFCO{% endblock %}
 
@@ -41,10 +41,21 @@
                 <select id="role" name="role" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
                     <option value="Intake Agent">Intake Agent (Basic Field Entry)</option>
                     <option value="Field Assessor">Field Assessor (Crop Inspections)</option>
+                    <option value="Office Staff">Office Staff (Processor)</option>
                     <option value="Committee Member">Committee Member (Approvals)</option>
                     {% if session.get('user_role') == 'System Admin' %}
                     <option value="System Admin">System Admin (Full Access)</option>
                     {% endif %}
+                </select>
+            </div>
+
+            <div>
+                <label for="branch_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Assigned Branch (Optional)</label>
+                <select id="branch_id" name="branch_id" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    <option value="">-- No Branch assigned (Global) --</option>
+                    {% for branch in branches %}
+                    <option value="{{ branch.id }}">{{ branch.name }} ({{ branch.location }})</option>
+                    {% endfor %}
                 </select>
             </div>
 

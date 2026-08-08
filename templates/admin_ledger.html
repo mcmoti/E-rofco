@@ -1,0 +1,73 @@
+{% extends layout_template %}
+
+{% block title %}System Ledger & Bank Statement - M-ROFCO{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto my-6">
+    <div class="mb-6 flex items-center justify-between">
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+            ← {{ texts['back_dash'] or 'Back to Dashboard' }}
+        </a>
+        <a href="/admin/export-applications-csv" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs">
+            📥 Export CSV Ledger
+        </a>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Total Floating Cash (Petty Cash)</h3>
+            <p class="text-4xl font-black text-emerald-700">KES {{ "{:,.2f}".format(available_balance) }}</p>
+            <p class="text-xs text-slate-400 mt-2">Available for new loan approvals</p>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Total Loans Disbursed</h3>
+            <p class="text-4xl font-black text-slate-800">KES {{ "{:,.2f}".format(total_dispersed) }}</p>
+            <p class="text-xs text-slate-400 mt-2">Total approved capital allocated to members</p>
+        </div>
+    </div>
+
+    <!-- Ledger Table -->
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
+        <h2 class="text-2xl font-bold text-slate-800 mb-6">Disbursement Ledger</h2>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-200">
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">App ID</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Member Name</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Loan Type</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Approved Amt (KES)</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Flat Fee Interest</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for loan in loans %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 px-4 text-sm text-slate-600">{{ loan.updated_at.strftime('%Y-%m-%d %H:%M') if loan.updated_at else 'N/A' }}</td>
+                        <td class="py-3 px-4 text-sm font-semibold text-emerald-700">{{ loan.id }}</td>
+                        <td class="py-3 px-4 text-sm text-slate-800 font-medium">{{ loan.member_name }}</td>
+                        <td class="py-3 px-4 text-sm text-slate-500">{{ loan.loan_type }}</td>
+                        <td class="py-3 px-4 text-sm font-bold text-slate-800">{{ "{:,.2f}".format(loan.approved_amount - loan.interest_applied) }}</td>
+                        <td class="py-3 px-4 text-sm font-semibold text-red-600">{{ "{:,.2f}".format(loan.interest_applied) }}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full border border-emerald-200">
+                                {{ loan.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-sm text-slate-500">No approved disbursements found in the ledger.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

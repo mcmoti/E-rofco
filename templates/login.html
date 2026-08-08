@@ -5,10 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ texts['login_title'] }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-image: linear-gradient(rgba(6, 78, 59, 0.75), rgba(6, 78, 59, 0.85)), url('/static/images/premium_agri_bg.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+    </style>
 </head>
-<body class="bg-[#fdfbf7] font-sans antialiased text-slate-800 flex items-center justify-center min-h-screen p-4">
+<body class="font-sans antialiased text-slate-800 flex items-center justify-center min-h-screen p-4">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-emerald-100 text-center relative overflow-hidden">
+    <div class="bg-white/85 backdrop-blur-xl p-8 rounded-2xl shadow-2xl max-w-md w-full border border-white/40 text-center relative overflow-hidden">
         <!-- Top Accent Bar -->
         <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-600"></div>
 
@@ -31,7 +39,31 @@
         <form method="POST" class="space-y-5">
             <div class="text-left">
                 <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                    Staff Username
+                    Staff Role
+                </label>
+                <div class="relative">
+                    <select 
+                        name="role" 
+                        id="role-select"
+                        required
+                        class="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none appearance-none"
+                        onchange="updatePermissions()"
+                    >
+                        <option value="" disabled selected>Select your assigned Role...</option>
+                        <option value="Intake Agent">Intake Agent</option>
+                        <option value="Field Assessor">Field Assessor</option>
+                        <option value="Committee Member">Committee Member</option>
+                        <option value="System Admin">System Admin</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-left">
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 mt-4">
+                    Username
                 </label>
                 <input 
                     type="text" 
@@ -40,6 +72,16 @@
                     required
                     class="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none"
                 >
+            </div>
+            
+            <!-- Permissions Overview Section (Dynamic) -->
+            <div id="permissions-container" class="hidden text-left bg-emerald-50/80 border border-emerald-100 rounded-xl p-4 mt-2">
+                <h4 class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    🛡️ Role Permissions
+                </h4>
+                <ul id="permissions-list" class="text-xs text-emerald-700 space-y-1.5 list-disc list-inside font-medium leading-relaxed">
+                    <!-- JavaScript will populate this -->
+                </ul>
             </div>
             
             <div class="text-left">
@@ -67,5 +109,55 @@
         </form>
     </div>
 
+    <script>
+        const permissionsData = {
+            "Intake Agent": [
+                "Register new farmers to the cooperative.",
+                "Initiate farm credit and micro-loan applications.",
+                "Auto-calculate estimated crop tonnage & yields."
+            ],
+            "Field Assessor": [
+                "Conduct on-site farm assessments.",
+                "Geotag farm locations via GPS coordinates.",
+                "Capture and upload crop health inspection photos."
+            ],
+            "Committee Member": [
+                "Review pending loan applications.",
+                "Approve or reject credit requests based on LTV.",
+                "Manage PIN change and security requests."
+            ],
+            "System Admin": [
+                "Full system access and configurations.",
+                "Manage branches and staff accounts.",
+                "View system ledger and reports."
+            ]
+        };
+
+        function updatePermissions() {
+            const select = document.getElementById('role-select');
+            const container = document.getElementById('permissions-container');
+            const list = document.getElementById('permissions-list');
+            
+            const selectedRole = select.value;
+            
+            if (permissionsData[selectedRole]) {
+                // Populate the list
+                list.innerHTML = '';
+                permissionsData[selectedRole].forEach(permission => {
+                    const li = document.createElement('li');
+                    li.textContent = permission;
+                    list.appendChild(li);
+                });
+                // Show container
+                container.classList.remove('hidden');
+                
+                // Add a small animation effect
+                container.classList.add('animate-pulse');
+                setTimeout(() => container.classList.remove('animate-pulse'), 300);
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>

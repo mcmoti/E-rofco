@@ -217,7 +217,7 @@
                 <span>🏠</span> Dashboard
             </a>
 
-            {% if session.get('user_role') in ['Intake Agent', 'System Admin'] %}
+            
             <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Operations</div>
             <a href="/register-farm" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>🏡</span> Farm Registry
@@ -231,25 +231,25 @@
             <a href="/staff/loan-intake" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>📞</span> Staff Intake
             </a>
-            {% endif %}
             
-            {% if session.get('user_role') in ['Intake Agent', 'Committee Member', 'System Admin'] %}
+            
+            
             <a href="/transport-logistics" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>🚜</span> Machinery Logistics
             </a>
             <a href="/weighbridge-tickets" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>📊</span> Yields & Tickets
             </a>
-            {% endif %}
+            
 
-            {% if session.get('user_role') == 'Field Assessor' %}
+            
             <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Assessor Actions</div>
             <a href="/staff/field-assessor" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>📋</span> Field Workspace
             </a>
-            {% endif %}
             
-            {% if session.get('user_role') in ['Committee Member', 'System Admin'] %}
+            
+            
             <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Committee Portal</div>
             <a href="/staff/credit-committee" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>🏛️</span> Credit Review
@@ -263,9 +263,9 @@
             <a href="/committee/pin-requests" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>🔐</span> PIN Requests
             </a>
-            {% endif %}
             
-            {% if session.get('user_role') == 'System Admin' %}
+            
+            
             <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Admin Tools</div>
             <a href="/admin/branches" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>⚙️</span> Branch Management
@@ -273,9 +273,9 @@
             <a href="/admin/ledger" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
                 <span>🏦</span> System Ledger
             </a>
-            {% endif %}
             
-            {% endif %}
+            
+            
         </nav>
 
         <div class="p-4 border-t border-emerald-800 bg-emerald-900/50">

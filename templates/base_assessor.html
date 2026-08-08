@@ -212,71 +212,12 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 custom-scrollbar">
-            {% if session.get('user_logged_in') %}
-            <a href="/home" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>🏠</span> Dashboard
-            </a>
-
-            {% if session.get('user_role') in ['Intake Agent', 'System Admin'] %}
-            <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Operations</div>
-            <a href="/register-farm" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>🏡</span> Farm Registry
-            </a>
-            <a href="/loan-services" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>💳</span> Loan Services
-            </a>
-            <a href="/shares-management" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>📈</span> Shares Management
-            </a>
-            <a href="/staff/loan-intake" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>📞</span> Staff Intake
-            </a>
-            {% endif %}
-            
-            {% if session.get('user_role') in ['Intake Agent', 'Committee Member', 'System Admin'] %}
-            <a href="/transport-logistics" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>🚜</span> Machinery Logistics
-            </a>
-            <a href="/weighbridge-tickets" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>📊</span> Yields & Tickets
-            </a>
-            {% endif %}
-
-            {% if session.get('user_role') == 'Field Assessor' %}
-            <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Assessor Actions</div>
             <a href="/staff/field-assessor" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>📋</span> Field Workspace
+                <span>📋</span> Assessor Dashboard
             </a>
-            {% endif %}
-            
-            {% if session.get('user_role') in ['Committee Member', 'System Admin'] %}
-            <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Committee Portal</div>
-            <a href="/staff/credit-committee" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>🏛️</span> Credit Review
-            </a>
-            <a href="/committee/reporting" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>📊</span> Dashboard
-            </a>
-            <a href="/committee/shares" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>⚖️</span> Share Approvals
-            </a>
-            <a href="/committee/pin-requests" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>🔐</span> PIN Requests
-            </a>
-            {% endif %}
-            
-            {% if session.get('user_role') == 'System Admin' %}
-            <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Admin Tools</div>
-            <a href="/admin/branches" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>⚙️</span> Branch Management
-            </a>
-            <a href="/admin/ledger" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;">
-                <span>🏦</span> System Ledger
-            </a>
-            {% endif %}
-            
-            {% endif %}
-        </nav>
+            <div class="mt-4 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Assessor Actions</div>
+            <a href="/staff/field-assessor" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800/50 text-emerald-100 transition-colors flex items-center gap-2" style="text-decoration:none;"><span>📋</span> Field Workspace</a>
+</nav>
 
         <div class="p-4 border-t border-emerald-800 bg-emerald-900/50">
             <a href="/toggle-language" class="flex items-center gap-2 text-xs font-semibold text-emerald-200 hover:text-white transition-colors mb-4" style="text-decoration:none;">
