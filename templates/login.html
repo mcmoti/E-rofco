@@ -3,51 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M-ROFCO Authentication</title>
+    <title>{{ texts['login_title'] }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 font-sans flex items-center justify-center min-h-screen p-4">
+<body class="bg-[#fdfbf7] font-sans antialiased text-slate-800 flex items-center justify-center min-h-screen p-4">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100 text-center">
-        <!-- Lock Icon for Authentication -->
-        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 text-2xl shadow-inner mx-auto">
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-emerald-100 text-center relative overflow-hidden">
+        <!-- Top Accent Bar -->
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-600"></div>
+
+        <!-- Lock Icon -->
+        <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 text-emerald-600 text-2xl shadow-sm border border-emerald-100 mx-auto">
             🔐
         </div>
 
-        <h1 class="text-xl font-bold text-gray-800 tracking-tight">{{ texts['login_title'] }}</h1>
-        <p class="text-xs text-gray-500 mt-1 mb-6 leading-relaxed max-w-xs mx-auto">{{ texts['login_subtext'] }}</p>
+        <h1 class="text-2xl font-extrabold text-emerald-950 tracking-tight">{{ texts['login_title'] }}</h1>
+        <p class="text-xs text-slate-500 mt-1.5 mb-8 leading-relaxed max-w-xs mx-auto">Enter your staff username and secure password to access the M-ROFCO management records.</p>
 
-        <!-- Error Banner for Wrong PIN entries -->
+        <!-- Error Banner -->
         {% if error %}
-        <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs font-semibold rounded-xl">
-            ⚠️ {{ error }}
+        <div class="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center justify-center gap-2">
+            <span>⚠️</span> {{ error }}
         </div>
         {% endif %}
 
-        <!-- Secure PIN Input Form -->
+        <!-- Secure Auth Input Form -->
         <form method="POST" class="space-y-5">
             <div class="text-left">
-                <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-                    {{ texts['pin_label'] }}
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Staff Username
+                </label>
+                <input 
+                    type="text" 
+                    name="username" 
+                    placeholder="e.g. intake1" 
+                    required
+                    class="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none"
+                >
+            </div>
+            
+            <div class="text-left">
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Secure Password
                 </label>
                 <input 
                     type="password" 
-                    name="pin" 
-                    pattern="[0-9]*" 
-                    inputmode="numeric"
-                    maxlength="4" 
-                    placeholder="••••" 
+                    name="password" 
+                    placeholder="••••••••" 
                     required
-                    class="w-full text-center tracking-widest text-2xl font-bold bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-150 outline-none"
+                    class="w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none"
                 >
             </div>
 
-            <div class="space-y-3 pt-2">
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-sm text-sm">
-                    {{ texts['login_btn'] }}
+            <div class="pt-4 space-y-3">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl transition duration-200 shadow-md shadow-emerald-600/20 text-sm transform hover:-translate-y-0.5">
+                    {{ texts['login_btn'] }} →
                 </button>
 
-                <a href="{{ url_for('toggle_language') }}" class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-4 rounded-xl transition duration-200 text-xs">
+                <a href="{{ url_for('toggle_language') }}" class="block w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl transition duration-200 text-xs text-center">
                     {{ texts['switch_btn'] }}
                 </a>
             </div>

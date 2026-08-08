@@ -10,13 +10,13 @@
 
     <style>
         :root {
-            --primary-dark: #0f172a;
-            --primary-navy: #1e293b;
-            --accent-green: #16a34a;
-            --bg-page: #f8fafc;
+            --primary-dark: #064e3b;
+            --primary-navy: #065f46;
+            --accent-green: #15803d;
+            --bg-page: #fdfbf7;
             --bg-card: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+            --text-main: #022c22;
+            --text-muted: #475569;
             --border-color: #e2e8f0;
             --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
             --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.08);
@@ -196,71 +196,96 @@
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="flex h-screen bg-[#fdfbf7] overflow-hidden text-slate-800 font-sans antialiased m-0 p-0">
 
-    <!-- SHARED TOP UTILITY BAR -->
-    <div class="top-utility-bar">
-        <div>
-            <span>📞 <a href="tel:+254712433289">+254 712 433289</a> / <a href="tel:+254799875432">+254 799 875432</a> / <a href="tel:+254716977448">+254 716 977448</a></span> &nbsp;|&nbsp;
-            <span>✉️ <a href="mailto:ogutunyo@gmail.com">ogutunyo@gmail.com</a> / <a href="mailto:kenyowt@gmail.com">kenyowt@gmail.com</a> / <a href="mailto:wycliff105@gmail.com">wycliff105@gmail.com</a></span>
+    <!-- LEFT SIDEBAR -->
+    <aside class="w-64 bg-[#064e3b] text-white flex flex-col h-full shadow-2xl flex-shrink-0 z-20">
+        <div class="p-6 border-b border-emerald-800">
+            <a href="/home" class="text-2xl font-black text-white decoration-none flex items-center gap-2" style="text-decoration:none;">
+                M-ROFCO <span class="text-emerald-400">Hub</span>
+            </a>
+            <div class="text-xs text-emerald-200 mt-1">Agricultural Management</div>
         </div>
-        <div>
-            <a href="/toggle-language">🌐 Kenya (Swahili / English)</a>
-        </div>
-    </div>
 
-    <!-- SHARED NAVBAR WITH ROLE-BASED NAVIGATION SWITCHER -->
-    <header class="main-header">
-        <a href="/home" class="brand-logo">M-ROFCO <span>Hub</span></a>
-
-        <!-- URD ROLE SWITCHER TABS -->
-        {% if session.get('user_logged_in') %}
-        <nav class="role-nav-container">
-            <a href="/staff/loan-intake" 
-               class="role-nav-item {% if active_role == 'intake' %}active-intake{% endif %}">
-                📞 Staff Intake
-            </a>
-            <a href="/staff/field-assessor" 
-               class="role-nav-item {% if active_role == 'assessor' %}active-assessor{% endif %}">
-                📋 Field Assessor
-            </a>
-            <a href="/staff/credit-committee" 
-               class="role-nav-item {% if active_role == 'committee' %}active-committee{% endif %}">
-                🏛️ Credit Committee
-            </a>
-        </nav>
-        {% endif %}
-
-        <div class="nav-actions">
-            {% if name %}
-            <span style="font-size: 14px; color: var(--text-muted);" class="hidden md:inline">
-                Welcome, <strong>{{ name }}</strong>
-            </span>
+        <nav class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 custom-scrollbar">
+            <a href="/home" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition-colors text-white" style="text-decoration:none;">🏠 Home Dashboard</a>
+            <a href="/register-farm" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition-colors text-white" style="text-decoration:none;">🏡 Farm Registry</a>
+            <a href="/transport-logistics" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition-colors text-white" style="text-decoration:none;">🚜 Logistics</a>
+            <a href="/weighbridge-tickets" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition-colors text-white" style="text-decoration:none;">⚖️ Weighbridge</a>
+            <a href="/loan-services" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition-colors text-white" style="text-decoration:none;">💳 Loan Services</a>
+            <a href="/shares-management" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition-colors text-white" style="text-decoration:none;">📈 Shares</a>
+            
+            {% if session.get('user_logged_in') %}
+            <div class="mt-6 mb-2 px-4 text-xs font-bold text-emerald-400 uppercase tracking-wider">Staff Portal</div>
+            
+            {% if session.get('user_role') in ['Intake Agent', 'System Admin'] %}
+            <a href="/staff/loan-intake" class="px-4 py-3 rounded-xl text-sm font-semibold {% if active_role == 'intake' %}bg-emerald-700 text-white shadow-inner{% else %}hover:bg-emerald-800 text-emerald-100{% endif %} transition-colors" style="text-decoration:none;">📞 Staff Intake</a>
             {% endif %}
-            <a href="/logout" class="logout-btn">Logout</a>
+            
+            {% if session.get('user_role') in ['Field Assessor', 'System Admin'] %}
+            <a href="/staff/field-assessor" class="px-4 py-3 rounded-xl text-sm font-semibold {% if active_role == 'assessor' %}bg-emerald-700 text-white shadow-inner{% else %}hover:bg-emerald-800 text-emerald-100{% endif %} transition-colors" style="text-decoration:none;">📋 Field Assessor</a>
+            {% endif %}
+            
+            {% if session.get('user_role') in ['Committee Member', 'System Admin'] %}
+            <a href="/staff/credit-committee" class="px-4 py-3 rounded-xl text-sm font-semibold {% if active_role == 'committee' %}bg-emerald-700 text-white shadow-inner{% else %}hover:bg-emerald-800 text-emerald-100{% endif %} transition-colors" style="text-decoration:none;">🏛️ Credit Committee</a>
+            <a href="/committee/pin-requests" class="px-4 py-3 rounded-xl text-sm font-semibold {% if active_role == 'pin_requests' %}bg-emerald-700 text-white shadow-inner{% else %}hover:bg-emerald-800 text-emerald-100{% endif %} transition-colors" style="text-decoration:none;">🔐 PIN Requests</a>
+            {% endif %}
+            
+            {% if session.get('user_role') == 'System Admin' %}
+            <a href="/admin/approve-funds" class="px-4 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-800 text-emerald-100 transition-colors" style="text-decoration:none;">💰 Approve Funds</a>
+            {% endif %}
+            
+            {% endif %}
+        </nav>
+
+        <div class="p-4 border-t border-emerald-800 bg-emerald-900/50">
+            <a href="/toggle-language" class="flex items-center gap-2 text-xs font-semibold text-emerald-200 hover:text-white transition-colors mb-4" style="text-decoration:none;">
+                🌐 Switch Lang (Swahili/Eng)
+            </a>
+            <div class="text-[10px] text-emerald-400/50 font-medium">© 2026 M-ROFCO Hub</div>
         </div>
-    </header>
+    </aside>
 
-    <!-- PAGE SPECIFIC CONTENT GOES HERE -->
-    <main class="page-body">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- SHARED FLOATING SUPPORT WIDGET -->
-    <a href="mailto:ogutunyo@gmail.com" class="floating-support-btn">
-        💬 Contact Support
-    </a>
-
-    <!-- SHARED FOOTER -->
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div>Copyright © 2026 M-ROFCO Cooperative Society Ltd. All rights reserved.</div>
-            <div style="display: flex; gap: 16px;">
-                <a href="/privacy-policy" style="color: var(--text-muted); text-decoration: none;">Privacy Policy</a>
-                <a href="/terms-of-use" style="color: var(--text-muted); text-decoration: none;">Terms of Use</a>
+    <!-- MAIN RIGHT CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- TOP HEADER -->
+        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 py-3 px-6 flex justify-between items-center flex-shrink-0 shadow-sm z-10">
+            <div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+                <span class="hidden md:inline-block">📞 <a href="tel:+254712433289" class="hover:text-emerald-700" style="text-decoration:none;">+254 712 433289</a></span>
+                <span class="hidden lg:inline-block">✉️ <a href="mailto:ogutunyo@gmail.com" class="hover:text-emerald-700" style="text-decoration:none;">ogutunyo@gmail.com</a></span>
             </div>
-        </div>
-    </footer>
+            <div class="flex items-center gap-4">
+                {% if name %}
+                <span class="text-sm text-slate-600 font-medium">Welcome, <strong class="text-[#064e3b]">{{ name }}</strong></span>
+                {% endif %}
+                
+                {% if session.get('user_logged_in') %}
+                <a href="/staff/request-password-change" class="text-xs font-bold text-slate-500 hover:text-[#064e3b] transition-colors" style="text-decoration:none;">Change Password</a>
+                {% endif %}
+                
+                <a href="/logout" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-4 py-1.5 rounded-lg text-sm font-bold border border-red-100 transition-colors" style="text-decoration:none;">Logout</a>
+            </div>
+        </header>
+
+        <!-- SCROLLABLE PAGE CONTENT -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth custom-scrollbar">
+            <div class="max-w-7xl mx-auto w-full pb-20">
+                {% block content %}{% endblock %}
+            </div>
+            
+            <!-- FOOTER -->
+            <footer class="mt-12 py-6 border-t border-slate-200 text-center text-xs text-slate-400 font-medium w-full">
+                Copyright © 2026 M-ROFCO Cooperative Society Ltd. 
+                <a href="/privacy-policy" class="ml-2 hover:text-slate-600">Privacy Policy</a> | 
+                <a href="/terms-of-use" class="hover:text-slate-600">Terms of Use</a>
+            </footer>
+        </main>
+        
+        <!-- FLOATING WIDGET -->
+        <a href="mailto:ogutunyo@gmail.com" class="absolute bottom-6 right-6 bg-[#064e3b] hover:bg-[#15803d] text-white px-5 py-3 rounded-full text-sm font-bold shadow-xl flex items-center gap-2 transition-transform hover:-translate-y-1 z-50 border border-emerald-700" style="text-decoration:none;">
+            💬 Contact Support
+        </a>
+    </div>
 
     <!-- SCRIPTS BLOCK FOR CHILD TEMPLATES -->
     {% block scripts %}{% endblock %}

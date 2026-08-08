@@ -8,8 +8,11 @@ import csv
 from io import StringIO
 import pandas as pd
 import requests
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
+from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response, send_file
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+from fpdf import FPDF
 
 app = Flask(__name__)
 
@@ -46,8 +49,61 @@ def init_db():
                 photo TEXT,
                 status TEXT DEFAULT 'Pending Assessment',
                 committee_notes TEXT,
+                guarantor_name TEXT,
+                guarantor_id TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS staff_users (
+                username TEXT PRIMARY KEY,
+                pin TEXT,
+                password_hash TEXT,
+                name TEXT NOT NULL,
+                role TEXT NOT NULL
+            )
+        ''')
+        
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS password_change_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                new_password_hash TEXT NOT NULL,
+                status TEXT DEFAULT 'Pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS system_funds (
+                id INTEGER PRIMARY KEY,
+                available_balance REAL DEFAULT 0.0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS fund_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                requested_by TEXT NOT NULL,
+                amount REAL NOT NULL,
+                status TEXT DEFAULT 'Pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS credit_receipts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                app_id TEXT NOT NULL,
+                member_name TEXT,
+                action TEXT,
+                approved_amount REAL,
+                committee_notes TEXT,
+                processed_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         conn.commit()
@@ -65,6 +121,44 @@ def init_db():
                 4.5, 350000.0, "Mechanized Tractor Tillage & Fertilizer", 
                 "Pending Inspection", "Pending Assessment"
             ))
+            conn.commit()
+
+        # Try to alter table if columns don't exist
+        try:
+            conn.execute("ALTER TABLE applications ADD COLUMN guarantor_name TEXT")
+            conn.execute("ALTER TABLE applications ADD COLUMN guarantor_id TEXT")
+        except sqlite3.OperationalError:
+            pass
+            
+        try:
+            conn.execute("ALTER TABLE applications ADD COLUMN loan_type TEXT DEFAULT 'Long-Term'")
+        except sqlite3.OperationalError:
+            pass
+            
+            
+        try:
+            conn.execute("ALTER TABLE staff_users ADD COLUMN password_hash TEXT")
+            default_pw = generate_password_hash('Mrofco2026')
+            conn.execute("UPDATE staff_users SET password_hash = ?", (default_pw,))
+        except sqlite3.OperationalError:
+            pass
+
+        cursor.execute("SELECT COUNT(*) FROM staff_users")
+        if cursor.fetchone()[0] == 0:
+            default_pw = generate_password_hash('Mrofco2026')
+            conn.executemany('''
+                INSERT INTO staff_users (username, pin, password_hash, name, role) VALUES (?, ?, ?, ?, ?)
+            ''', [
+                ('intake1', '1000', default_pw, 'Alice (Intake)', 'Intake Agent'),
+                ('assessor1', '2000', default_pw, 'Bob (Assessor)', 'Field Assessor'),
+                ('committee1', '3000', default_pw, 'Charlie (Committee)', 'Committee Member'),
+                ('admin1', '4000', default_pw, 'Dave (Admin)', 'System Admin')
+            ])
+            conn.commit()
+            
+        cursor.execute("SELECT COUNT(*) FROM system_funds")
+        if cursor.fetchone()[0] == 0:
+            conn.execute("INSERT INTO system_funds (id, available_balance) VALUES (1, 0.0)")
             conn.commit()
 
 init_db()
@@ -94,11 +188,6 @@ DASHBOARD_CACHE = {
     "last_updated": 0
 }
 CACHE_TIMEOUT = 300  # 5 minutes cache
-
-REGISTERED_USERS = {
-    "emp1": {"pin": "1234", "name": "John Doe", "role": "Staff Officer", "class": "Shareholding"},
-    "emp2": {"pin": "4321", "name": "John Doe", "role": "Staff Officer", "class": "General"}
-}
 
 # --- GROUNDED & HUMANIZED TEXT DICTIONARY ---
 TEXTS = {
@@ -356,6 +445,18 @@ def ensure_language():
     if 'lang' not in session:
         session['lang'] = 'en'
 
+def role_required(*roles):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not session.get('user_logged_in'):
+                return redirect(url_for('login'))
+            if session.get('user_role') not in roles and 'System Admin' not in roles:
+                return redirect(url_for('home'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 # --- APPLICATION ROUTES ---
 @app.route('/')
 def index():
@@ -379,22 +480,22 @@ def login():
         
     error = None
     if request.method == 'POST':
-        user_pin = request.form.get('pin', '')
-        authenticated_user = None
-        for username, data in REGISTERED_USERS.items():
-            if data['pin'] == user_pin:
-                authenticated_user = data
-                break
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM staff_users WHERE username = ?", (username,))
+            authenticated_user = cursor.fetchone()
                 
-        if authenticated_user:
+        if authenticated_user and check_password_hash(authenticated_user['password_hash'], password):
             session['user_logged_in'] = True
-            session['user_username'] = username
+            session['user_username'] = authenticated_user['username']
             session['user_name'] = authenticated_user['name']
-            session['user_role'] = authenticated_user.get('role', 'Staff')
-            session['user_class'] = authenticated_user.get('class', 'General')
+            session['user_role'] = authenticated_user['role']
             return redirect(url_for('home'))
         else:
-            error = TEXTS[session['lang']]['invalid_pin']
+            error = "Invalid username or password. Please try again."
             
     return render_template('login.html', texts=TEXTS[session['lang']], current_lang=session['lang'], error=error)
 
@@ -461,6 +562,22 @@ def loan_services():
     success = False
     error = None
     if request.method == 'POST':
+        app_id = f"APP-2026-{int(time.time()) % 10000:04d}"
+        farmer_name = request.form.get('farmer_name')
+        contacts = request.form.get('contacts')
+        location = request.form.get('location')
+        amount = float(request.form.get('amount', 0.0))
+        term = request.form.get('term')
+        term_unit = request.form.get('term_unit', 'Months')
+        
+        with get_db() as conn:
+            conn.execute('''
+                INSERT INTO applications (
+                    id, member_name, member_id, zone, acreage, requested_amount, purpose, 
+                    estimated_tonnage, gross_valuation, net_valuation, max_cap, status, committee_notes, loan_type
+                ) VALUES (?, ?, ?, ?, 0.0, ?, 'Input Micro-Loan', 0.0, 0.0, 0.0, ?, 'Pending Committee Review', ?, 'Short-Term')
+            ''', (app_id, farmer_name, contacts, location, amount, amount, f"Term: {term} {term_unit}"))
+            conn.commit()
         success = True
 
     farmers_list = fetch_registered_farmers()
@@ -478,6 +595,25 @@ def transport_logistics():
 
     farmers_list = fetch_registered_farmers()
     return render_template('transport_logistics.html', texts=TEXTS[session['lang']], current_lang=session['lang'], success=success, error=error, farmers=farmers_list)
+
+@app.route('/weighbridge-tickets/download-pdf')
+def download_weighbridge_pdf():
+    records = fetch_sheet_records("WeighbridgeTickets")
+    
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="M-ROFCO - Weighbridge Tickets Report", ln=True, align='C')
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", size=10)
+    for row in records:
+        text = f"Ticket: {row.get('TicketNumber','')} | Date: {row.get('Date','')} | Farmer: {row.get('FarmerName','')} | Net Wt: {row.get('NetWeight','')} | Zone: {row.get('Zone','')}"
+        pdf.cell(0, 8, txt=text, ln=True)
+        
+    pdf_path = os.path.join(app.root_path, 'static', 'weighbridge_report.pdf')
+    pdf.output(pdf_path)
+    return send_file(pdf_path, as_attachment=True, download_name="Weighbridge_Report.pdf")
 
 @app.route('/shares-management', methods=['GET', 'POST'])
 def shares_management():
@@ -520,6 +656,7 @@ def weighbridge_tickets():
 
 # --- URD WORKFLOW & ADMIN ROUTES WITH SQLITE PERSISTENCE ---
 @app.route('/staff/loan-intake', methods=['GET', 'POST'])
+@role_required('Intake Agent')
 def staff_loan_intake():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -533,6 +670,10 @@ def staff_loan_intake():
         acreage = float(request.form.get('acreage', 0.0))
         requested_amount = float(request.form.get('requested_amount', 0.0))
         purpose = request.form.get('purpose')
+        term = request.form.get('term', '')
+        term_unit = request.form.get('term_unit', 'Months')
+        guarantor_name = request.form.get('guarantor_name')
+        guarantor_id = request.form.get('guarantor_id')
 
         membership_records = fetch_sheet_records("Membership")
         total_tonnage = 0.0
@@ -554,9 +695,9 @@ def staff_loan_intake():
             conn.execute('''
                 INSERT INTO applications (
                     id, member_name, member_id, zone, acreage, requested_amount, purpose, 
-                    estimated_tonnage, gross_valuation, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Field Assessment')
-            ''', (app_id, member_name, member_id, zone, acreage, requested_amount, purpose, total_tonnage, gross_val))
+                    estimated_tonnage, gross_valuation, status, guarantor_name, guarantor_id, loan_type, committee_notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Field Assessment', ?, ?, 'Long-Term', ?)
+            ''', (app_id, member_name, member_id, zone, acreage, requested_amount, purpose, total_tonnage, gross_val, guarantor_name, guarantor_id, f"Requested Term: {term} {term_unit}"))
             conn.commit()
 
         success_msg = f"Loan application {app_id} created with auto-calculated yield ({total_tonnage} tons, KES {gross_val:,.2f}) and queued for field assessment!"
@@ -572,6 +713,7 @@ def staff_loan_intake():
     )
 
 @app.route('/staff/field-assessor', methods=['GET', 'POST'])
+@role_required('Field Assessor')
 def staff_field_assessor():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -641,6 +783,7 @@ def staff_field_assessor():
     )
 
 @app.route('/staff/credit-committee')
+@role_required('Committee Member')
 def staff_credit_committee():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -649,6 +792,13 @@ def staff_credit_committee():
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM applications WHERE status = 'Pending Committee Review'")
         pending_committee_apps = [dict(row) for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT available_balance FROM system_funds WHERE id = 1")
+        row = cursor.fetchone()
+        available_balance = row['available_balance'] if row else 0.0
+
+    error_msg = request.args.get('error')
+    receipt_app_id = request.args.get('receipt_app_id')
 
     return render_template(
         'staff_credit_committee.html', 
@@ -656,10 +806,14 @@ def staff_credit_committee():
         name=session.get('user_name', 'Committee Chair'), 
         applications=pending_committee_apps,
         texts=TEXTS[session['lang']], 
-        current_lang=session['lang']
+        current_lang=session['lang'],
+        available_balance=available_balance,
+        error_msg=error_msg,
+        receipt_app_id=receipt_app_id
     )
 
 @app.route('/staff/credit-committee/action', methods=['POST'])
+@role_required('Committee Member')
 def credit_committee_action():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -670,8 +824,12 @@ def credit_committee_action():
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT requested_amount, max_cap FROM applications WHERE id = ?", (app_id,))
+        cursor.execute("SELECT requested_amount, max_cap, member_name FROM applications WHERE id = ?", (app_id,))
         app_row = cursor.fetchone()
+        
+        cursor.execute("SELECT available_balance FROM system_funds WHERE id = 1")
+        row = cursor.fetchone()
+        available_balance = row['available_balance'] if row else 0.0
 
         if app_row:
             req_amt = app_row['requested_amount']
@@ -686,18 +844,239 @@ def credit_committee_action():
             else:
                 new_status = 'Rejected'
                 approved_val = 0.0
+                
+            if action in ['approve', 'override']:
+                if approved_val > available_balance:
+                    return redirect(url_for('staff_credit_committee', error="Insufficient funds to approve this loan."))
+                conn.execute("UPDATE system_funds SET available_balance = available_balance - ? WHERE id = 1", (approved_val,))
 
             conn.execute('''
                 UPDATE applications 
                 SET status = ?, approved_amount = ?, committee_notes = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
             ''', (new_status, approved_val, notes, app_id))
+            
+            # Generate receipt record
+            conn.execute('''
+                INSERT INTO credit_receipts (app_id, member_name, action, approved_amount, committee_notes, processed_by)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (app_id, app_row['member_name'], action.upper(), approved_val, notes, session.get('user_username')))
+            
             conn.commit()
 
-    return redirect(url_for('staff_credit_committee'))
+        return redirect(url_for('staff_credit_committee', success_msg=f"Application {app_id} processed successfully.", receipt_app_id=app_id))
+
+@app.route('/committee/download-receipt/<app_id>')
+@role_required('Committee Member', 'System Admin')
+def download_receipt(app_id):
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM credit_receipts WHERE app_id = ? ORDER BY id DESC LIMIT 1", (app_id,))
+        receipt = cursor.fetchone()
+        
+    if not receipt:
+        return "Receipt not found", 404
+        
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="M-ROFCO Hub - Credit Committee Receipt", ln=True, align='C')
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Receipt ID: REC-{receipt['id']:04d}", ln=True)
+    pdf.cell(200, 10, txt=f"Application ID: {receipt['app_id']}", ln=True)
+    pdf.cell(200, 10, txt=f"Member Name: {receipt['member_name']}", ln=True)
+    pdf.cell(200, 10, txt=f"Action Taken: {receipt['action']}", ln=True)
+    pdf.cell(200, 10, txt=f"Approved Amount: KES {receipt['approved_amount']:,.2f}", ln=True)
+    pdf.cell(200, 10, txt=f"Processed By: {receipt['processed_by']}", ln=True)
+    pdf.cell(200, 10, txt=f"Date: {receipt['created_at']}", ln=True)
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, txt="Committee Notes/Justification:", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, txt=str(receipt['committee_notes']))
+    
+    pdf_path = os.path.join(app.root_path, 'static', f'receipt_{app_id}.pdf')
+    pdf.output(pdf_path)
+    
+    return send_file(pdf_path, as_attachment=True)
+
+@app.route('/staff/request-password-change', methods=['GET', 'POST'])
+def request_password_change():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    success_msg = None
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        new_password_hash = generate_password_hash(new_password)
+        username = session.get('user_username')
+        with get_db() as conn:
+            conn.execute('''
+                INSERT INTO password_change_requests (username, new_password_hash) VALUES (?, ?)
+            ''', (username, new_password_hash))
+            conn.commit()
+        success_msg = "Password change request submitted for committee approval."
+
+    return render_template(
+        'request_password_change.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        success_msg=success_msg
+    )
+
+@app.route('/committee/password-requests', methods=['GET', 'POST'])
+@role_required('Committee Member', 'System Admin')
+def password_requests():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    if request.method == 'POST':
+        req_id = request.form.get('request_id')
+        action = request.form.get('action')
+        
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM password_change_requests WHERE id = ?", (req_id,))
+            req = cursor.fetchone()
+            
+            if req and action == 'approve':
+                conn.execute("UPDATE staff_users SET password_hash = ? WHERE username = ?", (req['new_password_hash'], req['username']))
+                conn.execute("UPDATE password_change_requests SET status = 'Approved' WHERE id = ?", (req_id,))
+            elif req and action == 'reject':
+                conn.execute("UPDATE password_change_requests SET status = 'Rejected' WHERE id = ?", (req_id,))
+                
+            conn.commit()
+            
+        return redirect(url_for('password_requests'))
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM password_change_requests WHERE status = 'Pending'")
+        requests = cursor.fetchall()
+        
+    return render_template(
+        'password_requests.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        requests=requests
+    )
+
+@app.route('/committee/create-staff', methods=['GET', 'POST'])
+@role_required('Committee Member', 'System Admin')
+def create_staff():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    success_msg = None
+    error_msg = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        name = request.form.get('name')
+        role = request.form.get('role')
+        
+        if role == 'System Admin' and session.get('user_role') != 'System Admin':
+            error_msg = "Only System Admins can create new System Admin accounts."
+        else:
+            default_pw = generate_password_hash('Mrofco2026')
+            try:
+                with get_db() as conn:
+                    conn.execute('''
+                        INSERT INTO staff_users (username, password_hash, name, role) 
+                        VALUES (?, ?, ?, ?)
+                    ''', (username, default_pw, name, role))
+                    conn.commit()
+                success_msg = f"Staff account '{username}' created successfully with default password 'Mrofco2026'."
+            except sqlite3.IntegrityError:
+                error_msg = "Username already exists."
+
+    return render_template(
+        'create_staff.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        success_msg=success_msg,
+        error_msg=error_msg
+    )
+
+@app.route('/committee/fund-requests', methods=['GET', 'POST'])
+@role_required('Committee Member', 'System Admin')
+def fund_requests():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    success_msg = None
+    if request.method == 'POST':
+        amount = float(request.form.get('amount', 0.0))
+        username = session.get('user_username')
+        with get_db() as conn:
+            conn.execute("INSERT INTO fund_requests (requested_by, amount) VALUES (?, ?)", (username, amount))
+            conn.commit()
+        success_msg = f"Fund request for KES {amount:,.0f} submitted to admin."
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM fund_requests WHERE status = 'Pending'")
+        pending_requests = cursor.fetchall()
+        cursor.execute("SELECT available_balance FROM system_funds WHERE id = 1")
+        row = cursor.fetchone()
+        available_balance = row['available_balance'] if row else 0.0
+
+    return render_template(
+        'fund_requests.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        success_msg=success_msg,
+        requests=pending_requests,
+        available_balance=available_balance
+    )
+
+@app.route('/admin/approve-funds', methods=['GET', 'POST'])
+@role_required('System Admin')
+def admin_approve_funds():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+        
+    if request.method == 'POST':
+        req_id = request.form.get('request_id')
+        action = request.form.get('action')
+        
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM fund_requests WHERE id = ?", (req_id,))
+            req = cursor.fetchone()
+            
+            if req and action == 'approve':
+                conn.execute("UPDATE system_funds SET available_balance = available_balance + ? WHERE id = 1", (req['amount'],))
+                conn.execute("UPDATE fund_requests SET status = 'Approved' WHERE id = ?", (req_id,))
+            elif req and action == 'reject':
+                conn.execute("UPDATE fund_requests SET status = 'Rejected' WHERE id = ?", (req_id,))
+                
+            conn.commit()
+            
+        return redirect(url_for('admin_approve_funds'))
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM fund_requests WHERE status = 'Pending'")
+        requests = cursor.fetchall()
+        
+    return render_template(
+        'admin_approve_funds.html', 
+        texts=TEXTS[session['lang']], 
+        current_lang=session['lang'],
+        requests=requests
+    )
 
 # --- EXPORT ROUTE FOR EXCEL / CSV DOWNLOAD ---
 @app.route('/admin/export-applications-csv')
+@role_required('System Admin', 'Committee Member')
 def export_applications_csv():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -734,6 +1113,7 @@ def export_applications_csv():
     )
 
 @app.route('/admin/config', methods=['GET', 'POST'])
+@role_required('System Admin')
 def admin_config():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
@@ -762,6 +1142,25 @@ def logout():
 def toggle_language():
     session['lang'] = 'sw' if session.get('lang') == 'en' else 'en'
     return redirect(request.referrer or url_for('index'))
+
+@app.route('/shares-management/download-pdf')
+def download_shares_pdf():
+    records = fetch_sheet_records("ShareCapital")
+    
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="M-ROFCO - Shares Management Report", ln=True, align='C')
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", size=10)
+    for row in records:
+        text = f"Date: {row.get('Date','')} | Name: {row.get('MemberName','')} | Shares: {row.get('TotalShares','')} | Value: KES {row.get('ShareValue','')}"
+        pdf.cell(0, 8, txt=text, ln=True)
+        
+    pdf_path = os.path.join(app.root_path, 'static', 'shares_report.pdf')
+    pdf.output(pdf_path)
+    return send_file(pdf_path, as_attachment=True, download_name="Shares_Report.pdf")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -68,7 +68,14 @@
 
             <div>
                 <label for="term" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['loan_term_label'] }}</label>
-                <input type="number" id="term" name="term" placeholder="e.g., 6" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                <div class="flex gap-2">
+                    <input type="number" id="term" name="term" placeholder="e.g., 6" required class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    <select name="term_unit" class="w-1/3 bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                        <option value="Days">Days</option>
+                        <option value="Weeks">Weeks</option>
+                        <option value="Months" selected>Months</option>
+                    </select>
+                </div>
             </div>
 
             <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3 px-4 rounded-lg shadow-xs transition-colors cursor-pointer text-center mt-2">

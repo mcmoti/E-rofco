@@ -15,10 +15,33 @@
     </div>
 
     {% if success_msg %}
-    <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold">
-        {{ success_msg }}
+    <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center justify-between">
+        <div>{{ success_msg }}</div>
+        {% if receipt_app_id %}
+        <a href="/committee/download-receipt/{{ receipt_app_id }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-sm transition-colors">
+            📄 Download Credit Receipt PDF
+        </a>
+        {% endif %}
     </div>
     {% endif %}
+    
+    {% if error_msg %}
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-semibold">
+        {{ error_msg }}
+    </div>
+    {% endif %}
+
+    <div class="mb-6 bg-slate-900 text-white rounded-2xl p-6 shadow-md flex items-center justify-between">
+        <div>
+            <h2 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-1">Available Cooperative Funds</h2>
+            <div class="text-3xl font-black text-emerald-400">KES {{ "{:,.0f}".format(available_balance) }}</div>
+        </div>
+        <div class="flex gap-2">
+            <a href="/committee/create-staff" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-xl text-sm transition-colors shadow-lg">Create Staff</a>
+            <a href="/committee/password-requests" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-xl text-sm transition-colors shadow-lg">Password Requests</a>
+            <a href="/committee/fund-requests" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition-colors shadow-lg">Request Fund Top-up</a>
+        </div>
+    </div>
 
     {% for app in applications %}
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
@@ -28,7 +51,14 @@
 
             <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4 mb-4">
                 <div>
-                    <span class="text-xs font-bold text-amber-600 tracking-wider uppercase">Application #{{ app.id }}</span>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-bold text-amber-600 tracking-wider uppercase">Application #{{ app.id }}</span>
+                        {% if app.loan_type == 'Short-Term' %}
+                        <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200 uppercase">Short-Term</span>
+                        {% else %}
+                        <span class="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200 uppercase">Long-Term</span>
+                        {% endif %}
+                    </div>
                     <h2 class="text-xl font-bold text-slate-900">{{ app.member_name }} <span class="text-sm font-normal text-slate-500">(ID: {{ app.member_id }})</span></h2>
                     <p class="text-xs text-slate-500">Zone: <strong>{{ app.zone }}</strong> | Farm Size: <strong>{{ app.acreage }} Acres</strong></p>
                 </div>
@@ -48,7 +78,7 @@
                     <strong class="text-slate-800 text-sm">KES {{ "{:,.0f}".format(app.net_valuation) }}</strong>
                 </div>
                 <div>
-                    <span class="text-slate-500 block">Standard 50% LTV Cap:</span>
+                    <span class="text-slate-500 block">Standard LTV Cap:</span>
                     <strong class="text-amber-700 text-sm">KES {{ "{:,.0f}".format(app.max_cap) }}</strong>
                 </div>
             </div>

@@ -3,35 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M-ROFCO Web Portal</title>
-    <!-- Tailwind CSS Script for clean styling -->
+    <title>M-ROFCO Cooperative Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Modern Agricultural Theme */
+        .bg-landing {
+            background-image: linear-gradient(rgba(6, 78, 59, 0.8), rgba(6, 78, 59, 0.9)), url('https://images.unsplash.com/photo-1592982537447-6f296a054593?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 font-sans flex items-center justify-center min-h-screen">
+<body class="bg-[#fdfbf7] font-sans antialiased text-slate-800">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100 text-center">
-        <!-- Logo Placeholder (matches our Kivy icon approach) -->
-        <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold shadow-md">
-            M
-        </div>
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-emerald-100 shadow-sm">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-md shadow-emerald-600/30">
+                        M
+                    </div>
+                    <span class="font-extrabold text-xl tracking-tight text-emerald-950">M-ROFCO</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('toggle_language') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-900 transition-colors uppercase tracking-wider">
+                        🌐 {{ texts['switch_btn'] }}
+                    </a>
+                </div>
+            </div>
+        </header>
 
-        <!-- Dynamic Headers based on selected language -->
-        <h1 class="text-2xl font-bold text-gray-800 tracking-tight">{{ texts['welcome'] }}</h1>
-        <p class="text-gray-500 mt-2 mb-8 text-sm">{{ texts['subtext'] }}</p>
-
-        <div class="space-y-4">
-            <!-- Proceed Action Button -->
-            <a href="{{ url_for('policy') }}" class="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-sm">
-                {{ texts['proceed'] }}
-            </a>
-
-            <hr class="border-gray-200 my-4">
-
-            <!-- Language Switcher Button -->
-            <a href="{{ url_for('toggle_language') }}" class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-4 rounded-xl transition duration-200 text-sm">
-                {{ texts['switch_btn'] }}
-            </a>
-        </div>
+        <!-- Hero Section -->
+        <main class="flex-grow bg-landing flex items-center justify-center py-20 px-6">
+            <div class="max-w-3xl mx-auto text-center">
+                <div class="inline-block mb-6 px-4 py-1.5 bg-emerald-500/20 border border-emerald-400/30 rounded-full backdrop-blur-sm">
+                    <span class="text-emerald-50 text-xs font-bold uppercase tracking-widest">{{ texts['twende_pamoja'] }}</span>
+                </div>
+                
+                <h1 class="text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-6 leading-tight">
+                    {{ texts['welcome'] }}
+                </h1>
+                
+                <p class="text-lg md:text-xl text-emerald-100 mb-10 max-w-2xl mx-auto font-medium leading-relaxed">
+                    {{ texts['subtext'] }}
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a href="{{ url_for('policy') }}" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-lg py-4 px-8 rounded-xl transition-all shadow-xl shadow-emerald-900/50 transform hover:-translate-y-0.5">
+                        {{ texts['proceed'] }} →
+                    </a>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-emerald-950 text-emerald-50 py-8 text-center border-t border-emerald-900">
+            <p class="text-sm font-medium opacity-70">© 2026 M-ROFCO Cooperative Society Ltd. All rights reserved.</p>
+        </footer>
     </div>
 
 </body>

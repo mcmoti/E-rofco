@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Admin: Approve Funds{% endblock %}
+
+{% block content %}
+<div class="site-container max-w-4xl mx-auto py-12">
+    <div class="mb-6 border-b pb-4">
+        <h1 class="text-2xl font-bold text-slate-900">Approve Fund Top-ups</h1>
+        <p class="text-sm text-slate-500">Review and approve fund requests submitted by the Credit Committee to increase the available balance.</p>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
+                <tr>
+                    <th class="px-6 py-4 font-bold">Requested By</th>
+                    <th class="px-6 py-4 font-bold">Amount (KES)</th>
+                    <th class="px-6 py-4 font-bold">Date</th>
+                    <th class="px-6 py-4 font-bold text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for req in requests %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-slate-800">{{ req.requested_by }}</td>
+                    <td class="px-6 py-4 font-bold text-emerald-600">{{ "{:,.0f}".format(req.amount) }}</td>
+                    <td class="px-6 py-4 text-slate-500">{{ req.created_at }}</td>
+                    <td class="px-6 py-4 text-right">
+                        <form method="POST" action="{{ url_for('admin_approve_funds') }}" class="inline-block">
+                            <input type="hidden" name="request_id" value="{{ req.id }}">
+                            <button type="submit" name="action" value="approve" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold mr-2 hover:bg-emerald-700">Approve</button>
+                            <button type="submit" name="action" value="reject" class="px-3 py-1.5 bg-red-100 text-red-800 rounded-lg text-xs font-bold hover:bg-red-200">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-slate-500">No pending fund requests.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
