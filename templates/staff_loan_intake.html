@@ -20,7 +20,7 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('loan_intake') if 'loan_intake' in endpoints else '/staff/loan-intake' }}">
+    <form method="POST" action="{{ url_for('staff_loan_intake') }}">
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
             
             <!-- Member Details -->

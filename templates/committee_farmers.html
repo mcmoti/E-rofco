@@ -1,0 +1,65 @@
+{% extends layout_template %}
+
+{% block title %}Registered Farmers - M-ROFCO{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto my-6">
+    <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-slate-800">🌾 Registered Farmers Directory</h2>
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-xs border border-emerald-100 p-6 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 text-xl mb-4">🚜</div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Total Registered Farms</h3>
+            <p class="text-3xl font-black text-slate-800">{{ total_farms }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-xs border border-blue-100 p-6 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 text-xl mb-4">🌱</div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Total Cooperative Acreage</h3>
+            <p class="text-3xl font-black text-slate-800">{{ "{:,.1f}".format(total_acreage) }} Acres</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8 mb-8">
+        <p class="text-slate-500 text-sm mb-6">Read-only view of all registered farmers across the cooperative zones.</p>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600 border-collapse">
+                <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold">Farmer Name</th>
+                        <th class="px-4 py-3 font-semibold">Phone</th>
+                        <th class="px-4 py-3 font-semibold">ID Number</th>
+                        <th class="px-4 py-3 font-semibold">Location</th>
+                        <th class="px-4 py-3 font-semibold">Farm Size</th>
+                        <th class="px-4 py-3 font-semibold">Main Crop</th>
+                        <th class="px-4 py-3 font-semibold">Registration Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for farmer in farmers %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 font-bold text-emerald-800">{{ farmer.name }}</td>
+                        <td class="px-4 py-3">{{ farmer.phone }}</td>
+                        <td class="px-4 py-3">{{ farmer.id_no }}</td>
+                        <td class="px-4 py-3">{{ farmer.location }}</td>
+                        <td class="px-4 py-3">{{ farmer.size }} Acres</td>
+                        <td class="px-4 py-3">{{ farmer.crop }}</td>
+                        <td class="px-4 py-3 text-xs text-slate-400">{{ farmer.created_at.strftime('%Y-%m-%d') if farmer.created_at else 'N/A' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-slate-500">No local farmer registrations found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

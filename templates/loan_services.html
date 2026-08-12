@@ -1,25 +1,23 @@
 {% extends layout_template %}
 
-{% block title %}{{ texts['loan_title'] }} - M-ROFCO{% endblock %}
+{% block title %}Loan Application - M-ROFCO{% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto my-6">
+<div class="max-w-3xl mx-auto my-6">
     
-    <!-- TOP BACK NAVIGATION -->
     <div class="mb-6">
         <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
             ← {{ texts['back_dash'] or 'Back to Dashboard' }}
         </a>
     </div>
 
-    <!-- FORM CARD -->
     <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
-        <h2 class="text-2xl font-bold text-emerald-700 mb-1">{{ texts['loan_title'] }}</h2>
-        <p class="text-sm text-slate-500 mb-6">{{ texts['loan_sub'] }}</p>
+        <h2 class="text-2xl font-bold text-emerald-700 mb-1">Unified Loan Application</h2>
+        <p class="text-sm text-slate-500 mb-6">Process Short-Term, Long-Term, or Harvesting Loans.</p>
 
         {% if success %}
             <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium rounded-lg flex items-center gap-2">
-                <span>✅</span> {{ texts['loan_success'] }}
+                <span>✅</span> Operation completed successfully!
             </div>
         {% endif %}
         {% if error %}
@@ -28,64 +26,140 @@
             </div>
         {% endif %}
 
-        <!-- Quick Farmer Search & Auto-Fill -->
-        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
-            <label for="farmer_search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                🔎 Search Registered Farmer (Auto-Fill)
-            </label>
-            <input type="text" id="farmer_search" list="farmers_datalist" placeholder="Type farmer name..." oninput="autoFillFarmer(this.value)" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all">
-            <datalist id="farmers_datalist">
-                {% for f in farmers %}
-                    <option value="{{ f.name }}">{{ f.phone }} - {{ f.location }}</option>
-                {% endfor %}
-            </datalist>
-            <a href="/register-farm" class="inline-block mt-3.5 text-xs text-emerald-700 hover:text-emerald-800 font-bold transition-colors">
-                ➕ Farmer Not Registered Yet? Click Here to Register New Farmer
-            </a>
+        <!-- Tab Toggle -->
+        <div class="flex gap-4 mb-6 border-b border-slate-200 pb-2">
+            <button type="button" onclick="switchTab('new_loan')" id="tab_new_loan" class="text-emerald-700 font-bold border-b-2 border-emerald-700 pb-1 px-2">New Loan Application</button>
+            <button type="button" onclick="switchTab('add_payout')" id="tab_add_payout" class="text-slate-500 hover:text-emerald-700 font-semibold pb-1 px-2">Record Harvesting Payout</button>
         </div>
 
-        <form method="POST" action="/loan-services" class="space-y-5">
-            <div>
-                <label for="farmer_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_farmer_name'] }}</label>
-                <input type="text" id="farmer_name" name="farmer_name" placeholder="e.g., Gabriel Omondi" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+        <!-- NEW LOAN FORM -->
+        <div id="new_loan_section">
+            <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
+                <label for="farmer_search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    🔎 Search Registered Farmer (Auto-Fill)
+                </label>
+                <input type="text" id="farmer_search" list="farmers_datalist" placeholder="Type farmer name..." oninput="autoFillFarmer(this.value)" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all">
+                <datalist id="farmers_datalist">
+                    {% for f in farmers %}
+                        <option value="{{ f.name }}">{{ f.phone }} - {{ f.location }}</option>
+                    {% endfor %}
+                </datalist>
             </div>
 
-            <div>
-                <label for="contacts" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_phone'] }}</label>
-                <input type="text" id="contacts" name="contacts" placeholder="e.g., 0712345678" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
-            </div>
+            <form method="POST" action="/loan-services" class="space-y-5">
+                <input type="hidden" name="action_type" value="new_loan">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="farmer_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_farmer_name'] }}</label>
+                        <input type="text" id="farmer_name" name="farmer_name" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    </div>
+                    <div>
+                        <label for="contacts" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_phone'] }}</label>
+                        <input type="text" id="contacts" name="contacts" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    </div>
+                </div>
 
-            <div>
-                <label for="location" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_loc'] }}</label>
-                <input type="text" id="location" name="location" placeholder="e.g., Kakamega, Kenya" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
-            </div>
+                <div>
+                    <label for="location" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['label_loc'] }}</label>
+                    <input type="text" id="location" name="location" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                </div>
 
-            <div>
-                <label for="amount" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['loan_amt_label'] }}</label>
-                <input type="number" id="amount" name="amount" placeholder="e.g., 20000" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
-                <div class="text-xs text-slate-500 mt-1.5 font-normal">{{ texts['interest_notice'] }}</div>
-            </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="loan_type" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Loan Type</label>
+                        <select id="loan_type" name="loan_type" onchange="calculateInterest()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                            <option value="Short-Term">Short-Term (10% Interest)</option>
+                            <option value="Long-Term">Long-Term (15% Interest)</option>
+                            <option value="Harvesting Loan">Harvesting Loan (10% Interest)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="amount" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Amount Given Out (KES)</label>
+                        <input type="number" id="amount" name="amount" oninput="calculateInterest()" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    </div>
+                </div>
 
-            <div>
-                <label for="term" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">{{ texts['loan_term_label'] }}</label>
-                <div class="flex gap-2">
-                    <input type="number" id="term" name="term" placeholder="e.g., 6" required class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
-                    <select name="term_unit" class="w-1/3 bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
-                        <option value="Days">Days</option>
-                        <option value="Weeks">Weeks</option>
-                        <option value="Months" selected>Months</option>
+                <!-- Visual Summary Box -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex justify-between items-center text-sm">
+                    <div>
+                        <span class="text-emerald-700 font-bold block">Interest Applied:</span>
+                        <span id="display_interest" class="text-lg font-black text-emerald-900">KES 0.00</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-emerald-700 font-bold block">Total Expected Refund:</span>
+                        <span id="display_total" class="text-lg font-black text-emerald-900">KES 0.00</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="expected_return_date" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Expected Refund Date</label>
+                        <input type="date" id="expected_return_date" name="expected_return_date" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    </div>
+                    <div>
+                        <label for="term" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Or Enter Term</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="term" name="term" placeholder="e.g., 6" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                            <select name="term_unit" class="w-1/3 bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                                <option value="Months" selected>Months</option>
+                                <option value="Weeks">Weeks</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-slate-100 my-4">
+
+                <h3 class="text-sm font-bold text-slate-800 uppercase">Digital Signature</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="digital_signature_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Loanee Signature Name</label>
+                        <input type="text" id="digital_signature_name" name="digital_signature_name" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    </div>
+                    <div>
+                        <label for="digital_signature_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Loanee ID Number</label>
+                        <input type="text" id="digital_signature_id" name="digital_signature_id" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 mt-4">
+                    <input type="checkbox" id="terms_accepted" name="terms_accepted" required class="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500">
+                    <label for="terms_accepted" class="text-sm text-slate-600">I accept the loan conditions, terms, and policies on behalf of the loanee.</label>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3 px-4 rounded-lg shadow-xs transition-colors cursor-pointer text-center mt-2">
+                    Submit Loan Application
+                </button>
+            </form>
+        </div>
+
+        <!-- ADD PAYOUT FORM -->
+        <div id="add_payout_section" style="display: none;">
+            <form method="POST" action="/loan-services" class="space-y-5">
+                <input type="hidden" name="action_type" value="add_payout">
+                
+                <div>
+                    <label for="harvest_app_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Select Active Harvesting Loan</label>
+                    <select id="harvest_app_id" name="harvest_app_id" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                        <option value="">-- Select Farmer's Loan --</option>
+                        {% for h in harvesting_loans %}
+                            <option value="{{ h.id }}">{{ h.member_name }} ({{ h.id }}) - Total so far: KES {{ h.requested_amount }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-            </div>
 
-            <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3 px-4 rounded-lg shadow-xs transition-colors cursor-pointer text-center mt-2">
-                {{ texts['loan_btn'] }}
-            </button>
-        </form>
+                <div>
+                    <label for="payout_amount" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Daily Payout Amount (KES)</label>
+                    <input type="number" id="payout_amount" name="payout_amount" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 transition-all">
+                </div>
 
-        <a href="/home" class="block text-center mt-6 text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors">
-            {{ texts['back_dash'] }}
-        </a>
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm py-3 px-4 rounded-lg shadow-xs transition-colors cursor-pointer text-center mt-2">
+                    Record Daily Payout
+                </button>
+            </form>
+        </div>
+
     </div>
 </div>
 {% endblock %}
@@ -100,6 +174,41 @@
             document.getElementById('farmer_name').value = matched.name;
             document.getElementById('contacts').value = matched.phone;
             document.getElementById('location').value = matched.location;
+        }
+    }
+
+    function calculateInterest() {
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const type = document.getElementById('loan_type').value;
+        let rate = 0.10; // Default 10%
+
+        if (type === 'Long-Term') {
+            rate = 0.15;
+        }
+
+        const interest = amount * rate;
+        const total = amount + interest;
+
+        document.getElementById('display_interest').textContent = 'KES ' + interest.toFixed(2);
+        document.getElementById('display_total').textContent = 'KES ' + total.toFixed(2);
+    }
+
+    function switchTab(tab) {
+        const newLoanSec = document.getElementById('new_loan_section');
+        const payoutSec = document.getElementById('add_payout_section');
+        const tabNew = document.getElementById('tab_new_loan');
+        const tabPayout = document.getElementById('tab_add_payout');
+
+        if (tab === 'new_loan') {
+            newLoanSec.style.display = 'block';
+            payoutSec.style.display = 'none';
+            tabNew.className = 'text-emerald-700 font-bold border-b-2 border-emerald-700 pb-1 px-2';
+            tabPayout.className = 'text-slate-500 hover:text-emerald-700 font-semibold pb-1 px-2';
+        } else {
+            newLoanSec.style.display = 'none';
+            payoutSec.style.display = 'block';
+            tabPayout.className = 'text-emerald-700 font-bold border-b-2 border-emerald-700 pb-1 px-2';
+            tabNew.className = 'text-slate-500 hover:text-emerald-700 font-semibold pb-1 px-2';
         }
     }
 </script>

@@ -44,8 +44,9 @@
     </div>
 
     {% for app in applications %}
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-        <form action="{{ url_for('credit_committee_action') if 'credit_committee_action' in endpoints else '/staff/credit-committee/action' }}" method="POST">
+    {% set is_over_cap = app.requested_amount > app.max_cap %}
+    <div class="bg-white rounded-2xl border-2 {{ 'border-red-500 bg-red-50/20' if is_over_cap else 'border-emerald-500 bg-emerald-50/20' }} shadow-sm p-6 mb-6">
+        <form action="{{ url_for('credit_committee_action') }}" method="POST">
             <input type="hidden" name="app_id" value="{{ app.id }}">
             <input type="hidden" name="member_name" value="{{ app.member_name }}">
 
@@ -68,20 +69,49 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div>
                     <span class="text-slate-500 block">Agronomist Audit Grade:</span>
                     <strong class="text-emerald-700 text-sm">{{ app.crop_health }}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block">Cane Maturity Stage:</span>
+                    <strong class="text-emerald-700 text-sm">{{ app.cane_stage or 'N/A' }}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 block">Net Harvest Valuation:</span>
                     <strong class="text-slate-800 text-sm">KES {{ "{:,.0f}".format(app.net_valuation) }}</strong>
                 </div>
                 <div>
-                    <span class="text-slate-500 block">Standard LTV Cap:</span>
+                    <span class="text-slate-500 block">Standard 50% LTV Cap:</span>
                     <strong class="text-amber-700 text-sm">KES {{ "{:,.0f}".format(app.max_cap) }}</strong>
                 </div>
             </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 text-xs bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+                <div>
+                    <span class="text-emerald-700 block mb-0.5">Interest Rate (Flat)</span>
+                    <strong class="text-emerald-900 text-sm">10%</strong>
+                </div>
+                <div>
+                    <span class="text-emerald-700 block mb-0.5">Expected Profit (Interest)</span>
+                    <strong class="text-emerald-900 text-sm">KES {{ "{:,.0f}".format(app.interest_applied) }}</strong>
+                </div>
+                <div>
+                    <span class="text-emerald-700 block mb-0.5">Total Return Expected</span>
+                    <strong class="text-emerald-900 text-sm">KES {{ "{:,.0f}".format(app.requested_amount + app.interest_applied) }}</strong>
+                </div>
+                <div>
+                    <span class="text-emerald-700 block mb-0.5">Timeline (Return Date)</span>
+                    <strong class="text-emerald-900 text-sm">{{ app.expected_return_date.strftime('%Y-%m-%d') if app.expected_return_date else 'N/A' }}</strong>
+                </div>
+            </div>
+
+            {% if app.committee_notes %}
+            <div class="mb-4 bg-slate-100 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 whitespace-pre-wrap">
+                <strong>Intake/Assessor Notes:</strong><br>{{ app.committee_notes }}
+            </div>
+            {% endif %}
 
             {% if app.requested_amount > app.max_cap %}
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800 flex items-center gap-2">
@@ -115,6 +145,47 @@
         No pending applications currently requiring credit committee clearance.
     </div>
     {% endfor %}
+
+
+    <div class="mt-10 mb-6 flex items-center justify-between border-b pb-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Recent Loan Repayments</h2>
+            <p class="text-sm text-slate-500">Monitor incoming payments from borrowers.</p>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+        {% if recent_repayments %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4 font-bold text-slate-700">Date</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Loan ID</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Paid By</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Amount (KES)</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Receipt Ref</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for payment in recent_repayments %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 text-slate-600">{{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800">{{ payment.application_id }}</td>
+                        <td class="px-6 py-4 text-slate-600">{{ payment.paid_by }}</td>
+                        <td class="px-6 py-4 font-bold text-emerald-600">{{ "{:,.2f}".format(payment.amount) }}</td>
+                        <td class="px-6 py-4 text-slate-500 text-xs">{{ payment.receipt_number or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-slate-500">
+            No recent repayments found.
+        </div>
+        {% endif %}
+    </div>
 
 </div>
 {% endblock %}

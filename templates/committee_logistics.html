@@ -1,0 +1,53 @@
+{% extends layout_template %}
+
+{% block title %}Machinery Logistics - M-ROFCO{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto my-6">
+    <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-slate-800">🚜 Machinery Logistics Tracking</h2>
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8 mb-8">
+        <p class="text-slate-500 text-sm mb-6">Read-only view of all requested machinery dispatches (plowing, hauling, harvesting).</p>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600 border-collapse">
+                <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold">Farmer Name</th>
+                        <th class="px-4 py-3 font-semibold">Location</th>
+                        <th class="px-4 py-3 font-semibold">Service Type</th>
+                        <th class="px-4 py-3 font-semibold">Requested Dispatch Date</th>
+                        <th class="px-4 py-3 font-semibold">Status</th>
+                        <th class="px-4 py-3 font-semibold">Created At</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for dispatch in dispatches %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 font-bold text-emerald-800">{{ dispatch.farmer_name }}</td>
+                        <td class="px-4 py-3">{{ dispatch.location }}</td>
+                        <td class="px-4 py-3 font-semibold text-blue-700">{{ dispatch.service_type }}</td>
+                        <td class="px-4 py-3 font-bold">{{ dispatch.dispatch_date.strftime('%Y-%m-%d') if dispatch.dispatch_date else 'N/A' }}</td>
+                        <td class="px-4 py-3">
+                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200 uppercase">
+                                {{ dispatch.status }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-slate-400">{{ dispatch.created_at.strftime('%Y-%m-%d') if dispatch.created_at else 'N/A' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">No machinery logistics requests found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends layout_template %}
+
+{% block title %}Corporate Equity Registry - M-ROFCO{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto my-6">
+    <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-slate-800">🏛️ Corporate Equity Registry</h2>
+        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8 mb-8">
+        <p class="text-slate-500 text-sm mb-6">Aggregated ledger of all approved corporate shares and equity held by registered cooperative members.</p>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600 border-collapse">
+                <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold">Farmer Name</th>
+                        <th class="px-4 py-3 font-semibold text-right">Total Shares Owned</th>
+                        <th class="px-4 py-3 font-semibold text-right">Total Equity Value (KES)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for farmer, data in equity_map.items() %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 font-bold text-emerald-800">{{ farmer }}</td>
+                        <td class="px-4 py-3 font-semibold text-right">{{ "{:,.0f}".format(data.total_shares) }}</td>
+                        <td class="px-4 py-3 font-bold text-blue-700 text-right">{{ "{:,.2f}".format(data.total_value) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="px-4 py-8 text-center text-slate-500">No approved equity records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

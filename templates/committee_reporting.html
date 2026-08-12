@@ -1,61 +1,139 @@
 {% extends layout_template %}
 
-{% block title %}Credit Committee Reporting Dashboard - M-ROFCO{% endblock %}
+{% block title %}Reporting Module - M-ROFCO{% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto my-6">
     <div class="mb-6 flex items-center justify-between">
-        <a href="/home" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
+        <a href="/staff/credit-committee" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center gap-1 transition-colors">
             ← Back to Dashboard
         </a>
     </div>
 
     <!-- Overview Header -->
-    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8 mb-8">
-        <h2 class="text-2xl font-bold text-slate-800 mb-2">Credit Committee Summarized Reporting</h2>
-        <p class="text-slate-500 text-sm">A digital dashboard providing top-level metrics on core operations and cooperative shareholding.</p>
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8 mb-6">
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Weekly Reporting Module</h2>
+        <p class="text-slate-500 text-sm">Week of {{ start_date.strftime('%d %b %Y') }} to {{ end_date.strftime('%d %b %Y') }}</p>
     </div>
 
-    <!-- Core Metrics Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Loans Metric -->
-        <div class="bg-white rounded-xl shadow-xs border border-emerald-100 p-6 flex flex-col items-center text-center">
-            <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 text-xl mb-4">
-                💰
-            </div>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Approved Loan Capital</h3>
-            <p class="text-3xl font-black text-slate-800">KES {{ "{:,.2f}".format(total_disbursed) }}</p>
-            <p class="text-xs text-emerald-600 font-semibold mt-2">{{ total_loans }} Total Disbursed Loans</p>
-        </div>
-
-        <!-- Shares Metric -->
-        <div class="bg-white rounded-xl shadow-xs border border-blue-100 p-6 flex flex-col items-center text-center">
-            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 text-xl mb-4">
-                📈
-            </div>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Share Capital Growth</h3>
-            <p class="text-3xl font-black text-slate-800">KES {{ "{:,.2f}".format(total_shares_value) }}</p>
-            <p class="text-xs text-blue-600 font-semibold mt-2">{{ total_share_transactions }} Approved Transactions</p>
-        </div>
-
-        <!-- Transport Metric -->
-        <div class="bg-white rounded-xl shadow-xs border border-orange-100 p-6 flex flex-col items-center text-center">
-            <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 text-xl mb-4">
-                🚜
-            </div>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Transport & Logistics</h3>
-            <p class="text-3xl font-black text-slate-800">{{ total_transport_logs }}</p>
-            <p class="text-xs text-orange-600 font-semibold mt-2">Machinery Dispatches</p>
-        </div>
-    </div>
-    
-    <div class="flex flex-wrap gap-4 mt-8">
-        <a href="/admin/ledger" class="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors shadow-xs">
-            🏦 View Full Ledger
+    <!-- Tabs -->
+    <div class="flex gap-4 mb-6 border-b border-gray-200">
+        <a href="/committee/reporting?type=society" class="pb-3 px-2 text-sm font-bold border-b-2 transition-colors {% if report_type == 'society' %}border-emerald-600 text-emerald-700{% else %}border-transparent text-slate-500 hover:text-slate-800{% endif %}" style="text-decoration:none;">
+            Society Status
         </a>
-        <a href="/admin/export-applications-csv" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-xs">
-            📥 Download Registry CSV
+        <a href="/committee/reporting?type=account" class="pb-3 px-2 text-sm font-bold border-b-2 transition-colors {% if report_type == 'account' %}border-emerald-600 text-emerald-700{% else %}border-transparent text-slate-500 hover:text-slate-800{% endif %}" style="text-decoration:none;">
+            Account Status
         </a>
     </div>
+
+    {% if report_type == 'society' %}
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold text-slate-800">Weekly Society Status</h3>
+            <button onclick="window.print()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-colors">
+                Print Report
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Expenses Section -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Expenses & Disbursements</h4>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Farmers Payment</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.farmers_payment) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Contractors Payment</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.contractors_payment) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Travellings</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.travellings) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Wages</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.wages) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Farmers Advances</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.advances) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Refund</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.refund) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Bank Charge</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.bank_charge) }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between text-base font-bold text-slate-800 border-t border-slate-200 pt-3 mt-3">
+                        <span>Grand Total (Expenses)</span>
+                        <span class="text-red-600">{{ "{:,.2f}".format(society_data.grand_total_expenses) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Income Section -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Income & Recoveries</h4>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Commission (SOC)</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.commission) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-600">Advance Recoveries</span>
+                        <span class="font-medium text-slate-800">{{ "{:,.2f}".format(society_data.adv_recoveries) }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between text-base font-bold text-slate-800 border-t border-slate-200 pt-3 mt-3">
+                        <span>Grand Total (Income)</span>
+                        <span class="text-emerald-600">{{ "{:,.2f}".format(society_data.grand_total_income) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl shadow-xs border border-gray-100 p-8">
+        <h3 class="text-lg font-bold text-slate-800 mb-6">Consolidated Cooperative Bank Account Status</h3>
+        
+        <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-8 text-center mb-8">
+            <p class="text-sm font-bold text-emerald-800 uppercase tracking-widest mb-2">Available Floating Cash</p>
+            <h1 class="text-5xl font-black text-emerald-700">KES {{ "{:,.2f}".format(available_balance) }}</h1>
+        </div>
+
+        <h4 class="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Recent Bank Activity (This Week)</h4>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-200 bg-slate-50">
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase">Date</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase">Category</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase">Description</th>
+                        <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase text-right">Amount (KES)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for entry in entries %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 text-sm text-slate-600">{{ entry.date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4 text-sm font-medium text-emerald-700">{{ entry.category }}</td>
+                        <td class="py-3 px-4 text-sm text-slate-800">{{ entry.description }}</td>
+                        <td class="py-3 px-4 text-sm font-bold text-slate-800 text-right">{{ "{:,.2f}".format(entry.amount) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-sm text-slate-500">No account activity this week.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

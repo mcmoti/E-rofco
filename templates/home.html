@@ -304,6 +304,46 @@
         </div>
     </section>
 
+    <!-- 3.5 RECENT ACTIVITIES METRICS -->
+    {% if session.get('user_role') == 'Intake Agent' or session.get('user_role') == 'System Admin' %}
+    <section class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm mb-2">
+        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4">
+            📈 Recent Intake Activities
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100 flex items-center gap-4">
+                <div class="w-12 h-12 bg-emerald-200 text-emerald-800 rounded-full flex items-center justify-center text-xl font-bold">
+                    👥
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-emerald-800 uppercase tracking-wide">Registered Farmers</p>
+                    <p class="text-2xl font-black text-emerald-950">{{ metrics.local_farmers }}</p>
+                </div>
+            </div>
+            
+            <div class="bg-amber-50 rounded-xl p-4 border border-amber-100 flex items-center gap-4">
+                <div class="w-12 h-12 bg-amber-200 text-amber-800 rounded-full flex items-center justify-center text-xl font-bold">
+                    ⏳
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">Pending Loans</p>
+                    <p class="text-2xl font-black text-amber-950">{{ metrics.local_loans_pending }}</p>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 rounded-xl p-4 border border-blue-100 flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-200 text-blue-800 rounded-full flex items-center justify-center text-xl font-bold">
+                    ✅
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-blue-800 uppercase tracking-wide">Completed Loans</p>
+                    <p class="text-2xl font-black text-blue-950">{{ metrics.local_loans_complete }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
     <!-- 4. OPERATIONAL MODULES GRID -->
     <section>
         <div class="flex items-center justify-between mb-6">
@@ -366,9 +406,9 @@
                 </div>
                 <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{{ texts['m5'] }}</h3>
                 <p class="text-slate-500 text-sm leading-relaxed">
-                    <span class="text-emerald-600 font-extrabold">{{ metrics.loan_count }}</span> Advances • 
-                    <span class="text-emerald-600 font-extrabold">{{ metrics.payment_count }}</span> Payments • 
-                    {{ texts['m5_sub'] }}
+                    <span class="text-emerald-600 font-extrabold">{{ metrics.loan_count }}</span> Short Advances • 
+                    <span class="text-emerald-600 font-extrabold">{{ metrics.long_term_loan_count }}</span> Dev Loans • 
+                    <span class="text-emerald-600 font-extrabold">{{ metrics.payment_count }}</span> Payments
                 </p>
             </a>
 
