@@ -1346,6 +1346,10 @@ def staff_loan_intake():
 
         success_msg = f"Loan application {app_id} created with auto-calculated yield ({total_tonnage} tons, KES {gross_val:,.2f}) and queued for field assessment!"
 
+    recent_approved_apps = Application.query.filter(
+        Application.status.like("Approved%")
+    ).order_by(Application.created_at.desc()).limit(10).all()
+
     return render_template(
         "staff_loan_intake.html",
         active_role="intake",
@@ -1354,6 +1358,7 @@ def staff_loan_intake():
         current_lang=session["lang"],
         config=URD_CONFIG,
         success_msg=success_msg,
+        recent_approved_apps=recent_approved_apps,
     )
 
 
@@ -1497,6 +1502,8 @@ def credit_committee_action():
             )
         )
 
+    override_amount = request.form.get("override_amount")
+    
     app_record = Application.query.get(app_id)
     system_fund = SystemFund.query.get(1)
     available_balance = system_fund.available_balance if system_fund else 0.0
@@ -1510,7 +1517,13 @@ def credit_committee_action():
             approved_val = max_cap
         elif action == "override":
             new_status = "Approved (Override)"
-            approved_val = req_amt
+            if override_amount and override_amount.strip():
+                try:
+                    approved_val = float(override_amount)
+                except ValueError:
+                    approved_val = req_amt
+            else:
+                approved_val = req_amt
         else:
             new_status = "Rejected"
             approved_val = 0.0

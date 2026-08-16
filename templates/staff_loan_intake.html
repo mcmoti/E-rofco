@@ -119,5 +119,54 @@
             </button>
         </div>
     </form>
+
+    <div class="mt-10 mb-6 flex items-center justify-between border-b pb-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Recently Approved Loans</h2>
+            <p class="text-sm text-slate-500">Loans that have cleared committee review and are ready for fund disbursement.</p>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+        {% if recent_approved_apps %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4 font-bold text-slate-700">App ID</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Member</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Amount Approved</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Status</th>
+                        <th class="px-6 py-4 font-bold text-slate-700">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for app in recent_approved_apps %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-semibold text-slate-800">{{ app.id }}</td>
+                        <td class="px-6 py-4 text-slate-600">{{ app.member_name }}</td>
+                        <td class="px-6 py-4 font-bold text-emerald-600">KES {{ "{:,.2f}".format(app.approved_amount) }}</td>
+                        <td class="px-6 py-4 text-xs font-semibold text-emerald-700">{{ app.status }}</td>
+                        <td class="px-6 py-4">
+                            {% if app.status != 'Funds Disbursed' %}
+                            <button class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold py-1 px-3 rounded-lg text-xs transition-colors" onclick="alert('Disbursement module pending integration. Funds approved for {{ app.member_name }}.')">
+                                Disburse Funds
+                            </button>
+                            {% else %}
+                            <span class="text-slate-400 text-xs font-bold">Disbursed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-slate-500">
+            No recently approved loans found.
+        </div>
+        {% endif %}
+    </div>
+
 </div>
 {% endblock %}
